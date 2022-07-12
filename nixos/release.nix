@@ -285,6 +285,7 @@ in rec {
         [ configuration
           versionModule
           ./maintainers/scripts/lxd/lxd-image.nix
+          ./virtualisation/lxc-passwordless-login.nix
         ];
     }).config.system.build.tarball)
 
@@ -301,6 +302,7 @@ in rec {
         [ configuration
           versionModule
           ./maintainers/scripts/lxd/lxd-image.nix
+          ./virtualisation/lxc-passwordless-login.nix
         ];
     }).config.system.build.metadata)
 
