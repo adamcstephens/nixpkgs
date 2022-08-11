@@ -13,6 +13,7 @@
 , faad2
 , ffmpegSupport ? true
 , ffmpeg
+, gpioSupport ? true
 , opusSupport ? true
 , opusfile
 , resampleSupport ? true
@@ -67,7 +68,8 @@ stdenv.mkDerivation {
     ++ optional opusSupport "-DOPUS"
     ++ optional pulseSupport "-DPULSEAUDIO"
     ++ optional resampleSupport "-DRESAMPLE"
-    ++ optional sslSupport "-DUSE_SSL";
+    ++ optional sslSupport "-DUSE_SSL"
+    ++ optional gpioSupport "-DGPIO";
 
   installPhase = ''
     runHook preInstall
