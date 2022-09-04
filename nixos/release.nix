@@ -291,6 +291,23 @@ in rec {
 
   );
 
+  # An image that can be imported into lxd and used for container creation
+  lxdImageVM = forMatchingSystems [ "x86_64-linux" "aarch64-linux" ] (system:
+
+    with import ./.. { inherit system; };
+
+    hydraJob ((import lib/eval-config.nix {
+      inherit system;
+      modules =
+        [
+          configuration
+          versionModule
+          ./modules/virtualisation/lxd-image-vm.nix
+          ./modules/virtualisation/lxc-passwordless-login.nix
+        ];
+      }).config.system.build.qemuImage)
+  );
+
   # Metadata for the lxd image
   lxdMeta = forMatchingSystems [ "x86_64-linux" "aarch64-linux" ] (system:
 
