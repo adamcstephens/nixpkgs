@@ -64,10 +64,12 @@ in
     #   }
     # ];
 
-    networking.useDHCP = true;
+    networking.useDHCP = mkDefault true;
 
-    documentation.nixos.enable = false;
-    documentation.enable = false;
-    programs.command-not-found.enable = false;
+    documentation.nixos.enable = mkDefault false;
+    documentation.enable = mkDefault false;
+    programs.command-not-found.enable = mkDefault false;
+
+    services.openssh.enable = mkDefault true;
   };
 }
