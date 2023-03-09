@@ -26360,6 +26360,8 @@ with pkgs;
 
   linux-doc = callPackage ../os-specific/linux/kernel/htmldocs.nix { };
 
+  linux-enable-ir-emitter = callPackage ../applications/system/linux-enable-ir-emitter { };
+
   cryptodev = linuxPackages.cryptodev;
 
   dpdk = callPackage ../os-specific/linux/dpdk {
@@ -30390,6 +30392,8 @@ with pkgs;
   hovercraft = python3Packages.callPackage ../applications/misc/hovercraft { };
 
   howl = callPackage ../applications/editors/howl { };
+
+  howdy = callPackage ../applications/system/howdy { };
 
   hdl-dump = callPackage ../tools/misc/hdl-dump { };
 

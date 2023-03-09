@@ -162,6 +162,16 @@ let
         '';
       };
 
+      howdyAuth = mkOption {
+        default = config.services.howdy.enable;
+        defaultText = literalExpression "config.services.howdy.enable";
+        type = types.bool;
+        description = lib.mdDoc ''
+          If set, IR camera will be used (if exists and your
+          facial models are enrolled).
+        '';
+      };
+
       oathAuth = mkOption {
         default = config.security.pam.oath.enable;
         defaultText = literalExpression "config.security.pam.oath.enable";
@@ -538,6 +548,9 @@ let
           '') +
           optionalString cfg.fprintAuth ''
             auth sufficient ${pkgs.fprintd}/lib/security/pam_fprintd.so
+          '' +
+          optionalString cfg.howdyAuth ''
+            auth sufficient ${config.services.howdy.package}/lib/security/pam_howdy.so
           '' +
           # Modules in this block require having the password set in PAM_AUTHTOK.
           # pam_unix is marked as 'sufficient' on NixOS which means nothing will run
@@ -1330,6 +1343,9 @@ in
       '' +
       optionalString (isEnabled (cfg: cfg.fprintAuth)) ''
         mr ${pkgs.fprintd}/lib/security/pam_fprintd.so,
+      '' +
+      optionalString (isEnabled (cfg: cfg.howdyAuth)) ''
+        mr ${config.services.howdy.package}/lib/security/pam_howdy.so,
       '' +
       optionalString (isEnabled (cfg: cfg.u2fAuth)) ''
         mr ${pkgs.pam_u2f}/lib/security/pam_u2f.so,
