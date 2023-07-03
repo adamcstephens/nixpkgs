@@ -94,6 +94,14 @@ in {
             Enables the (experimental) LXD UI.
           '';
         };
+
+        package = lib.mkOption {
+          type = lib.types.package;
+          default = pkgs.lxd-ui;
+          description = lib.mdDoc ''
+            Package for LXD UI.
+          '';
+        };
       };
     };
   };
@@ -154,7 +162,7 @@ in {
         ++ optional cfg.zfsSupport config.boot.zfs.package;
 
       environment = mkIf (cfg.ui.enable) {
-        "LXD_UI" = "${cfg.package}/share/ui";
+        "LXD_UI" = "${cfg.ui.package}";
       };
 
       serviceConfig = {

@@ -2,11 +2,10 @@
 , fetchFromGitHub
 , fetchYarnDeps
 , lib
-, ...
 }:
 mkYarnPackage rec {
   pname = "lxd-ui";
-  version = "0.0.1";
+  version = "unstable-2023-07-03";
 
   src = fetchFromGitHub {
     owner = "canonical";
@@ -15,7 +14,6 @@ mkYarnPackage rec {
     sha256 = "sha256-lEzGACSv6CpxnfkOcsdPrH6KRKDkoKv63m8Gsodk8uc=";
   };
 
-  packageJSON = ./package.json;
   offlineCache = fetchYarnDeps {
     yarnLock = "${src}/yarn.lock";
     sha256 = "sha256-SLkgJDb9lwz/ShZh+H4YKAFRc1BdANWI5ndM2O6NzXE=";
