@@ -29,8 +29,11 @@
 , installShellFiles
 , nixosTests
 , gitUpdater
+, callPackage
 }:
-
+let
+  ui = callPackage ./ui.nix { };
+in
 buildGoModule rec {
   pname = "lxd";
   version = "5.15";
@@ -69,6 +72,11 @@ buildGoModule rec {
   preBuild = ''
     # required for go-dqlite. See: https://github.com/lxc/lxd/pull/8939
     export CGO_LDFLAGS_ALLOW="(-Wl,-wrap,pthread_create)|(-Wl,-z,now)"
+  '';
+
+  postBuild = ''
+    mkdir -p $out/share
+    cp -r ${ui} $out/share/ui
   '';
 
   preCheck =
