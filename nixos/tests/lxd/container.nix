@@ -15,10 +15,10 @@ let
   lxd-image-rootfs = lxd-image.lxdContainerImage.${pkgs.stdenv.hostPlatform.system};
 
 in {
-  name = "lxd";
+  name = "lxd-container";
 
   meta = with pkgs.lib.maintainers; {
-    maintainers = [ patryk27 ];
+    maintainers = [ patryk27 adamcstephens ];
   };
 
   nodes.machine = { lib, ... }: {
