@@ -62,6 +62,7 @@ in {
 
       # avoid killing nixos-rebuild switch when executed through lxc exec
       stopIfChanged = false;
+      restartIfChanged = false;
 
       unitConfig = {
         Description = "LXD - agent";
