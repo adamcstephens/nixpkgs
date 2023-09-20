@@ -207,7 +207,10 @@ in {
       documentation = [ "man:lxd(1)" ];
 
       path = [ pkgs.util-linux ]
-        ++ lib.optional cfg.zfsSupport config.boot.zfs.package;
+        ++ (lib.optionals cfg.zfsSupport [
+          config.boot.zfs.package
+          "${config.boot.zfs.package}/lib/udev"
+        ]);
 
       environment = lib.mkIf (cfg.ui.enable) {
         "LXD_UI" = cfg.ui.package;
