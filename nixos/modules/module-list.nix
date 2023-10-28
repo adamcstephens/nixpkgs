@@ -1502,6 +1502,7 @@
   ./virtualisation/docker.nix
   ./virtualisation/ecs-agent.nix
   ./virtualisation/hyperv-guest.nix
+  ./virtualisation/incus.nix
   ./virtualisation/kvmgt.nix
   ./virtualisation/libvirtd.nix
   ./virtualisation/lxc.nix

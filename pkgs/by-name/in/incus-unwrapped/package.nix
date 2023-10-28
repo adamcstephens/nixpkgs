@@ -11,6 +11,7 @@
 , udev
 , installShellFiles
 , gitUpdater
+, nixosTests
 }:
 
 buildGoModule rec {
@@ -81,6 +82,8 @@ buildGoModule rec {
   '';
 
   passthru = {
+    tests.incus = nixosTests.incus;
+
     updateScript = gitUpdater {
       rev-prefix = "incus-";
     };
