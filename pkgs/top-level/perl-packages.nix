@@ -1237,6 +1237,19 @@ with self; {
     };
   };
 
+  AudioCuefileParser = buildPerlPackage {
+    pname = "Audio-Cuefile-Parser";
+    version = "0.02";
+    src = fetchurl {
+      url = "mirror://cpan/authors/id/M/MA/MATTK/Audio-Cuefile-Parser-0.02.tar.gz";
+      hash = "sha256-ulbQcMhz2WxoatmoH99P6JuETkPrSd/gAL+c70PFtmk=";
+    };
+    meta = {
+      description = "Parse a cuefile and access the chewy, nougat centre";
+      license = with lib.licenses; [ artistic1 gpl1Plus ];
+    };
+  };
+
   AudioFLACHeader = buildPerlPackage {
     pname = "Audio-FLAC-Header";
     version = "2.4";
@@ -12605,6 +12618,19 @@ with self; {
     };
   };
 
+  IOInterface = buildPerlModule {
+    pname = "IO-Interface";
+    version = "1.09";
+    src = fetchurl {
+      url = "mirror://cpan/authors/id/L/LD/LDS/IO-Interface-1.09.tar.gz";
+      hash = "sha256-5j6BxS6x4OYOwtmD9VUtJJPhFxeZJclnV/I8S9n6cTo=";
+    };
+    meta = {
+      description = "Access and modify network interface card configuration";
+      license = with lib.licenses; [ artistic1 gpl1Plus ];
+    };
+  };
+
   IOInteractive = buildPerlPackage {
     pname = "IO-Interactive";
     version = "1.022";
@@ -14640,6 +14666,21 @@ with self; {
   };
 
   maatkit = callPackage ../development/perl-modules/maatkit { };
+
+  MacFSEvents = buildPerlPackage {
+    pname = "Mac-FSEvents";
+    version = "0.011";
+    src = fetchurl {
+      url = "mirror://cpan/authors/id/S/SK/SKAJI/Mac-FSEvents-0.22.tar.gz";
+      hash = "sha256-bS800Ynh71eteCk8NduGrwSVeHVCFHRaE/tLsfNatjQ=";
+    };
+    buildInputs = [ pkgs.darwin.apple_sdk_11_0.Libsystem pkgs.darwin.apple_sdk_11_0.frameworks.CoreServices ];
+    meta = {
+      description = "Monitor a directory structure for changes";
+      license = with lib.licenses; [ artistic1 gpl1Plus ];
+      platforms = lib.platforms.darwin;
+    };
+  };
 
   MacPasteboard = buildPerlPackage {
     pname = "Mac-Pasteboard";
@@ -17819,6 +17860,20 @@ with self; {
     meta = {
       description = "URI related types and coercions for Moose";
       homepage = "https://github.com/moose/MooseX-Types-URI";
+      license = with lib.licenses; [ artistic1 gpl1Plus ];
+    };
+  };
+
+  MP3CutGapless = buildPerlPackage {
+    pname = "MP3-CutGapless";
+    version = "0.03";
+    src = fetchurl {
+      url = "mirror://cpan/authors/id/A/AG/AGRUNDMA/MP3-Cut-Gapless-0.03.tar.gz";
+      hash = "sha256-PoS3OdHx4902FvhR3GV14WXTKEZ/AySGB5UOWVH+pPM=";
+    };
+    propagatedBuildInputs = [ AudioCuefileParser ];
+    meta = {
+      description = "Split an MP3 file without gaps (based on pcutmp3)";
       license = with lib.licenses; [ artistic1 gpl1Plus ];
     };
   };
