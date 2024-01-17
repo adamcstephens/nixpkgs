@@ -8469,12 +8469,8 @@ with pkgs;
 
   gaphor = python3Packages.callPackage ../tools/misc/gaphor { };
 
-  inherit (callPackages ../tools/filesystems/garage {
-    inherit (darwin.apple_sdk.frameworks) Security;
-  })
-    garage
-      garage_0_8 garage_0_9
-      garage_0_8_5 garage_0_9_1;
+  garage_0_8 = callPackage ../by-name/ga/garage/0_8.nix { };
+  garage_0_9 = callPackage ../by-name/ga/garage/0_9.nix { };
 
   garmintools = callPackage ../development/libraries/garmintools { };
 
