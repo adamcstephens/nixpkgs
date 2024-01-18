@@ -78,7 +78,7 @@ rustPlatform.buildRustPackage {
     changelog = "https://git.deuxfleurs.fr/Deuxfleurs/garage/releases/tag/v${version}";
     homepage = "https://garagehq.deuxfleurs.fr";
     license = lib.licenses.agpl3Only;
-    maintainers = with lib.maintainers; [ nickcao _0x4A6F teutat3s raitobezarius ];
+    maintainers = with lib.maintainers; [ nickcao _0x4A6F teutat3s raitobezarius adamcstephens ];
     knownVulnerabilities = (lib.optional eol "Garage version ${version} is EOL");
     broken = stdenv.isDarwin && lib.versionOlder version "0.9";
     mainProgram = "garage";
