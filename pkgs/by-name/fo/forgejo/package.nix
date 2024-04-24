@@ -6,7 +6,6 @@
 , gzip
 , lib
 , makeWrapper
-, nix-update-script
 , nixosTests
 , openssh
 , pam
@@ -20,11 +19,21 @@
 }:
 
 let
+  source = builtins.fromJSON (builtins.readFile ./source.json);
+
+  src = fetchFromGitea {
+    domain = "codeberg.org";
+    owner = "forgejo";
+    repo = "forgejo";
+    rev = "v${source.version}";
+    inherit (source) hash;
+  };
+
   frontend = buildNpmPackage {
     pname = "forgejo-frontend";
-    inherit (forgejo) src version;
 
-    npmDepsHash = "sha256-BffoEbIzTU61bw3ECEm5eDHcav4S27MB5jQKsMprkcw=";
+    inherit src;
+    inherit (source) npmDepsHash version;
 
     patches = [
       ./package-json-npm-build-frontend.patch
@@ -39,17 +48,9 @@ let
 in
 buildGoModule rec {
   pname = "forgejo";
-  version = "7.0.0";
 
-  src = fetchFromGitea {
-    domain = "codeberg.org";
-    owner = "forgejo";
-    repo = "forgejo";
-    rev = "v${version}";
-    hash = "sha256-oIx1aPrHgOWx13ocA3t7N5UdTgr+64tgC0XcEnhA/eE=";
-  };
-
-  vendorHash = "sha256-UcjaMi/4XYLdaJhi2j3UWqHqkpTbZBo6EwNXxdRIKLw=";
+  inherit src;
+  inherit (source) vendorHash version;
 
   subPackages = [ "." ];
 
@@ -116,7 +117,7 @@ buildGoModule rec {
     '';
 
     tests = nixosTests.forgejo;
-    updateScript = nix-update-script { };
+    updateScript = ./update.nu;
   };
 
   meta = {

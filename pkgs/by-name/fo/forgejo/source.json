@@ -1,0 +1,15 @@
+{
+  "url": "https://codeberg.org/forgejo/forgejo.git",
+  "rev": "73c190af4c13a09453b878e255c31cd70ddd5ab9",
+  "date": "2024-04-23T08:42:03+00:00",
+  "path": "/nix/store/4dgiizsw6pkskhi57nw56mzyhzai5yyr-forgejo",
+  "sha256": "1qgx81w15p251dh8pszy1971v59pgdxh673ssyqyb067z9l7b350",
+  "hash": "sha256-oIx1aPrHgOWx13ocA3t7N5UdTgr+64tgC0XcEnhA/eE=",
+  "fetchLFS": false,
+  "fetchSubmodules": false,
+  "deepClone": false,
+  "leaveDotGit": false,
+  "version": "7.0.0",
+  "npmDepsHash": "sha256-BffoEbIzTU61bw3ECEm5eDHcav4S27MB5jQKsMprkcw=",
+  "vendorHash": "sha256-UcjaMi/4XYLdaJhi2j3UWqHqkpTbZBo6EwNXxdRIKLw="
+}
