@@ -742,11 +742,9 @@ in
   incron = runTest ./incron.nix;
   incus = import ./incus {
     inherit runTest;
-    lts = false;
   };
   incus-lts = import ./incus {
     inherit runTest;
-    lts = true;
   };
   influxdb = runTest ./influxdb.nix;
   influxdb2 = runTest ./influxdb2.nix;
