@@ -41,10 +41,6 @@ let
   pythonPath = python.pkgs.makePythonPath providerDependencies;
 in
 
-assert
-  (lib.elem "airplay" providers)
-  -> throw "music-assistant: airplay support is missing libraop, a library we will not package because it depends on OpenSSL 1.1.";
-
 python.pkgs.buildPythonApplication rec {
   pname = "music-assistant";
   version = "2.5.8";
