@@ -70,6 +70,10 @@ python.pkgs.buildPythonApplication rec {
     substituteInPlace pyproject.toml \
       --replace-fail "0.0.0" "${version}"
 
+    substituteInPlace music_assistant/providers/airplay/helpers.py \
+      --replace-fail 'os.path.join(base_path, f"cliraop-{system}-{architecture}")' \
+      'os.getenv("CLIRAOP_BINARY", os.path.join(base_path, f"cliraop-{system}-{architecture}"))'
+
     rm -rv music_assistant/providers/spotify/bin
   '';
 
