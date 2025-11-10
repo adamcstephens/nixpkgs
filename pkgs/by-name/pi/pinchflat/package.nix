@@ -3,22 +3,26 @@
   fetchFromGitHub,
   fetchYarnDeps,
   beamPackages,
+  writeShellScript,
   yarn,
   nodejs,
   esbuild,
   tailwindcss,
   fixup-yarn-lock,
   apprise,
+  mix2nix,
+  nixfmt,
+  nix-update,
   yt-dlp,
 }:
 beamPackages.mixRelease rec {
   pname = "pinchflat";
-  version = "2025.6.6";
+  version = "2025.9.26";
   src = fetchFromGitHub {
     owner = "kieraneglin";
     repo = "pinchflat";
     rev = "v${version}";
-    hash = "sha256-5hHueaA0QGTDr4wViZMBpBFhPnl8uAaxy72LMHgZdWU=";
+    hash = "sha256-45lw/48WTlfwTMWsCryNY3g3W9Ff31vMvw0W9znAJGk=";
 
   };
 
@@ -63,6 +67,7 @@ beamPackages.mixRelease rec {
 
     mix do deps.loadpaths --no-deps-check, tailwind default --minify + esbuild default --minify + phx.digest
   '';
+
   postInstall = ''
     wrapProgram $out/bin/pinchflat --prefix PATH : ${
       lib.makeBinPath [
@@ -72,9 +77,18 @@ beamPackages.mixRelease rec {
     }
   '';
 
+  passthru.updateScript = writeShellScript "update.sh" ''
+    set -eou pipefail
+
+    ${lib.getExe nix-update} pinchflat
+    ${lib.getExe mix2nix} '${src}/mix.lock' > pkgs/by-name/pi/pinchflat/mix.nix
+    ${lib.getExe nixfmt} pkgs/by-name/pi/pinchflat/mix.nix
+  '';
+
   meta = {
     description = "Your next YouTube media manager";
     homepage = "https://github.com/kieraneglin/pinchflat";
+    changelog = "https://github.com/kieraneglin/pinchflat/releases/tag/v${version}";
     license = lib.licenses.agpl3Only;
     maintainers = with lib.maintainers; [ charludo ];
     platforms = lib.platforms.unix;

@@ -998,23 +998,6 @@ let
         beamDeps = [ telemetry ];
       };
 
-      timex = buildMix rec {
-        name = "timex";
-        version = "3.7.12";
-
-        src = fetchHex {
-          pkg = "timex";
-          version = "${version}";
-          sha256 = "220dc675e8afca1762568dad874d8fbc8a0a0ccb25a4d1bde8f7cf006707e04f";
-        };
-
-        beamDeps = [
-          combine
-          gettext
-          tzdata
-        ];
-      };
-
       tzdata = buildMix rec {
         name = "tzdata";
         version = "1.1.3";
