@@ -6,7 +6,9 @@
   nixosTests,
   versionCheckHook,
   nix-update-script,
-  git,
+  gitMinimal,
+  git ? gitMinimal,
+  makeWrapper,
 }:
 
 let
@@ -55,6 +57,8 @@ buildGoModule rec {
 
   vendorHash = "sha256-ReGxoPvW4G6DbFfR2OeeT3tupZkpLpX80zK824oeyVg=";
 
+  nativeBuildInputs = [ makeWrapper ];
+
   # See upstream Makefile
   # https://code.forgejo.org/forgejo/runner/src/branch/main/Makefile
   tags = [
@@ -72,15 +76,19 @@ buildGoModule rec {
     "-skip ${lib.concatStringsSep "|" disabledTests}"
   ];
 
-  nativeCheckInputs = [ git ];
-
   postInstall = ''
     # Fix up go-specific executable naming derived from package name, upstream
     # also calls it `forgejo-runner`
     mv $out/bin/runner $out/bin/forgejo-runner
+
+    # provide backward compatbility since v12 removed bundled git
+    wrapProgram $out/bin/forgejo-runner --prefix PATH : ${lib.makeBinPath [ git ]}
+
     # provide old binary name for compatibility
     ln -s $out/bin/forgejo-runner $out/bin/act_runner
   '';
+
+  nativeCheckInputs = [ git ];
 
   doInstallCheck = true;
   nativeInstallCheckInputs = [ versionCheckHook ];
