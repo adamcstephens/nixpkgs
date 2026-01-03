@@ -20,6 +20,7 @@
   odbcSupport ? false,
   parallelBuild ? true,
 
+  buildPackages,
   fetchFromGitHub,
   gawk,
   gnum4,
@@ -35,6 +36,8 @@
   openjdk11,
   openssl,
   perl,
+  pkgsBuildBuild,
+  removeReferencesTo,
   runtimeShell,
   stdenv,
   systemd,
@@ -93,12 +96,18 @@ stdenv.mkDerivation {
     LANG = "C.UTF-8";
   };
 
+  depsBuildBuild = lib.optionals (stdenv.hostPlatform != stdenv.buildPlatform) [
+    buildPackages.stdenv.cc
+    pkgsBuildBuild.erlang
+  ];
+
   nativeBuildInputs = [
     makeWrapper
     perl
     gnum4
     libxslt
     libxml2
+    removeReferencesTo
   ];
 
   buildInputs = [
@@ -114,6 +123,10 @@ stdenv.mkDerivation {
   # disksup requires a shell
   postPatch = ''
     substituteInPlace lib/os_mon/src/disksup.erl --replace-fail '"sh ' '"${runtimeShell} '
+  ''
+  + lib.optionalString (stdenv.hostPlatform != stdenv.buildPlatform) ''
+    # When cross-compiling, patch escript shebangs to use the bootstrap Erlang
+    patchShebangs --build erts/emulator/utils/find_cross_ycf
   '';
 
   debugInfo = enableDebugInfo;
@@ -131,23 +144,93 @@ stdenv.mkDerivation {
   ++ optional enableHipe "--enable-hipe"
   ++ optional javacSupport "--with-javac"
   ++ optional odbcSupport "--with-odbc=${unixODBC}"
-  ++ optional wxSupport "--enable-wx"
+  ++ optional (!wxSupport) "--without-wx"
   ++ optional enableSystemd "--enable-systemd"
   ++ optional stdenv.hostPlatform.isDarwin "--enable-darwin-64bit"
   # make[3]: *** [yecc.beam] Segmentation fault: 11
-  ++ optional (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isx86_64) "--disable-jit";
-
-  installTargets = [
-    "install"
-    "install-docs"
+  ++ optional (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isx86_64) "--disable-jit"
+  # When building fully static binaries, link NIFs and SSL statically
+  ++ optionals stdenv.hostPlatform.isStatic [
+    "--enable-static-nifs=yes"
+    "--disable-dynamic-ssl-lib"
+    "--with-ssl-zlib=${zlib}/lib"
   ];
 
+  # When building statically, the main beam binary is fully static but some
+  # drivers (.so files) are still built for optional runtime loading.
+  # Since a static executable cannot dlopen(), we need to handle the DED
+  # (Dynamic Erlang Driver) build specially and clean up unusable .so files.
+  preConfigure = lib.optionalString stdenv.hostPlatform.isStatic ''
+    # Set cross-compilation sysroot so crypto/ssl can find OpenSSL
+    export erl_xcomp_sysroot="${stdenv.cc.libc}"
+
+    # Add library paths for configure link tests
+    export LDFLAGS="$LDFLAGS -L${lib.getLib openssl}/lib -L${zlib}/lib"
+    # Tell the build system to link crypto and zlib statically into NIFs
+    export LIBS="-lcrypto -lz"
+
+    # Get the path to the dynamic musl (not musl-static)
+    muslLib=$(dirname $(dirname ${stdenv.cc.libc}/lib/libc.so))/lib
+
+    # Create a wrapper script that uses the unwrapped compiler with dynamic CRT
+    # This allows the .so files to build (they're needed during the build process)
+    mkdir -p $TMPDIR/ded-wrapper
+
+    cat > $TMPDIR/ded-wrapper/cc << WRAPPER
+    #!/bin/sh
+    # Use the unwrapped compiler with dynamic musl CRT for building shared objects
+    exec ${stdenv.cc.cc}/bin/${stdenv.cc.targetPrefix}gcc -B$muslLib "\$@"
+    WRAPPER
+
+    chmod +x $TMPDIR/ded-wrapper/cc
+    export DED_LD="$TMPDIR/ded-wrapper/cc"
+    export DED_LDFLAGS="-shared -fPIC"
+    export DED_CFLAGS="-fPIC"
+    # For crypto configure link test - use empty flags since we're linking statically
+    export DED_LDFLAGS_CONFTEST="-L${lib.getLib openssl}/lib -L${zlib}/lib"
+  '';
+
+  # Remove unusable .so files from static builds - they can't be loaded by
+  # a statically linked executable anyway, and keeping them is misleading
   postInstall = ''
     ln -sv $out/lib/erlang/lib/erl_interface*/bin/erl_call $out/bin/erl_call
 
     wrapProgram $out/lib/erlang/bin/erl --prefix PATH ":" "${runtimePath}"
     wrapProgram $out/lib/erlang/bin/start_erl --prefix PATH ":" "${runtimePath}"
+  ''
+  + lib.optionalString stdenv.hostPlatform.isStatic ''
+    # Remove driver .so files that cannot be loaded by the static executable
+    find $out/lib/erlang -name "*.so" -delete
   '';
+
+  postFixup = lib.optionalString stdenv.hostPlatform.isStatic ''
+    # Remove propagated-build-inputs to avoid closure bloat from static libs
+    rm $out/nix-support/propagated-build-inputs
+
+    # Clean up references to build-time paths in installed files
+    find $out -name "*.mk" -exec sed -i 's|-L/nix/store/[^ ]*||g' {} \;
+
+    # Remove -file() directives in .erl source files that reference bootstrap erlang
+    find $out -name "*.erl" -exec sed -i 's|-file("/nix/store/[^"]*"|-file(""|g' {} \;
+
+    # Scrub nix store paths from .beam files (debug info contains source paths)
+    for f in $(find $out -name "*.beam"); do
+      sed -i "s|/nix/store/[a-z0-9]\{32\}-[^/]*/|/|g" "$f" 2>/dev/null || true
+    done
+
+    find "$out" -type f -exec remove-references-to -t ${lib.getOutput "out" openssl} '{}' +
+    find "$out" -type f -exec remove-references-to -t ${lib.getDev openssl} '{}' +
+    find "$out" -type f -exec remove-references-to -t ${lib.getOutput "etc" openssl} '{}' +
+    find "$out" -type f -exec remove-references-to -t ${ncurses} '{}' +
+    find "$out" -type f -exec remove-references-to -t ${zlib} '{}' +
+  '';
+
+  installTargets = [
+    "install"
+  ]
+  ++ lib.optionals (!stdenv.hostPlatform.isStatic) [
+    "install-docs"
+  ];
 
   passthru = {
     updateScript = nix-update-script {
