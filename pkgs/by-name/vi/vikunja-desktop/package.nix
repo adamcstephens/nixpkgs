@@ -15,12 +15,12 @@
 
 let
   executableName = "vikunja-desktop";
-  version = "0.24.6";
+  version = "1.0.0";
   src = fetchFromGitHub {
     owner = "go-vikunja";
     repo = "vikunja";
     rev = "v${version}";
-    hash = "sha256-yUUZ6gPI2Bte36HzfUE6z8B/I1NlwWDSJA2pwkuzd34=";
+    hash = "sha256-IJ6985gLuI0O08xZq8NYoet02NPFqQQhDLND+nfmdbA=";
   };
 in
 stdenv.mkDerivation (finalAttrs: {
@@ -40,7 +40,7 @@ stdenv.mkDerivation (finalAttrs: {
       pnpmInstallFlags
       ;
     fetcherVersion = 1;
-    hash = "sha256-orFwjmS1KF82JiQa+BE92YOtKsnYiKVzLXrpjtbe1z8=";
+    hash = "sha256-BvQfRsV5hiOTkxK+W3qHvVQwMAGdLB3X+PwYBa6Bwl4=";
   };
 
   env = {
