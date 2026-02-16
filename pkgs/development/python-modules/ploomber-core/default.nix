@@ -10,7 +10,7 @@
   typing-extensions,
 }:
 
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "ploomber-core";
   version = "0.2.27";
   pyproject = true;
@@ -18,7 +18,7 @@ buildPythonPackage rec {
   src = fetchFromGitHub {
     owner = "ploomber";
     repo = "core";
-    tag = version;
+    tag = finalAttrs.version;
     hash = "sha256-/HlJxaxsGbZ1UIJNwDdzJLR4bey7bv/qsmFmVi8eWjQ=";
   };
 
@@ -47,8 +47,8 @@ buildPythonPackage rec {
   meta = {
     description = "Core module shared across Ploomber projects";
     homepage = "https://github.com/ploomber/core";
-    changelog = "https://github.com/ploomber/core/blob/${src.tag}/CHANGELOG.md";
+    changelog = "https://github.com/ploomber/core/blob/${finalAttrs.src.tag}/CHANGELOG.md";
     license = lib.licenses.asl20;
     maintainers = with lib.maintainers; [ euxane ];
   };
-}
+})
