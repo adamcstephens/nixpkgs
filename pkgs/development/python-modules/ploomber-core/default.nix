@@ -6,6 +6,7 @@
   pyyaml,
   posthog,
   pytestCheckHook,
+  pythonAtLeast,
   typing-extensions,
 }:
 
@@ -34,6 +35,11 @@ buildPythonPackage rec {
   disabledTests = [
     "telemetry" # requires network
     "exceptions" # requires stderr capture
+  ];
+
+  disabledTestPaths = lib.optionals (pythonAtLeast "3.14") [
+    # Depends on pre-3.14 attribute access
+    "tests/test_config.py"
   ];
 
   pythonImportsCheck = [ "ploomber_core" ];
