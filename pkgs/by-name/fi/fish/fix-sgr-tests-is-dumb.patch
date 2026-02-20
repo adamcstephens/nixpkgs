@@ -1,0 +1,33 @@
+diff --git a/src/terminal.rs b/src/terminal.rs
+--- a/src/terminal.rs
++++ b/src/terminal.rs
+@@ -780,6 +780,7 @@
+ #[cfg(test)]
+ mod tests {
+     use fish_color::Color24;
++    use crate::screen::IS_DUMB;
+ 
+     use super::{
+         Outputter,
+@@ -789,6 +790,10 @@
+ 
+     #[test]
+     fn sgr_combining() {
++        // Ensure IS_DUMB is false: another test (via test_init/env_init) may have set
++        // it to true if the build environment exposes TERM=dumb.
++        IS_DUMB.store(false);
++
+         // No style, no content
+         let mut outp = Outputter::new_buffering_no_assume_normal();
+         {
+@@ -824,6 +829,10 @@
+ 
+     #[test]
+     fn sgr_max_length() {
++        // Ensure IS_DUMB is false: another test (via test_init/env_init) may have set
++        // it to true if the build environment exposes TERM=dumb.
++        IS_DUMB.store(false);
++
+         // Cut at max length
+         let mut outp = Outputter::new_buffering_no_assume_normal();
+         {

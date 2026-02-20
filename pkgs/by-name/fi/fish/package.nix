@@ -188,6 +188,15 @@ stdenv.mkDerivation (finalAttrs: {
     # * <https://github.com/LnL7/nix-darwin/issues/122>
     # * <https://github.com/fish-shell/fish-shell/issues/7142>
     ./nix-darwin-path.patch
+
+    # The sgr_combining and sgr_max_length unit tests check SGR escape sequence
+    # output but do not call test_init(). Other tests that do call test_init()
+    # invoke env_init() which imports the process environment including TERM; if
+    # TERM=dumb is set (common in headless/CI build environments) IS_DUMB gets
+    # set to true globally, causing write_command() to suppress all output.
+    # Reset IS_DUMB to false at the start of these tests so they are not
+    # affected by parallel test execution order.
+    ./fix-sgr-tests-is-dumb.patch
   ];
 
   # Fix FHS paths in tests
