@@ -128,6 +128,9 @@ buildPythonPackage rec {
 
   pythonImportsCheck = [ "sql" ];
 
+  # python-update-script picks up an 11-year old 0.38 over the current version
+  passthru.skipBulkUpdate = true;
+
   meta = {
     description = "Better SQL in Jupyter";
     homepage = "https://github.com/ploomber/jupysql";
