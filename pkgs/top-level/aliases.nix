@@ -2053,6 +2053,7 @@ mapAliases {
   xcbutilrenderutil = libxcb-render-util; # Added 2026-02-04
   xcbutilwm = libxcb-wm; # Added 2026-02-04
   xcursorthemes = xcursor-themes; # Added 2026-01-19
+  xdeltaUnstable = throw "'xdeltaUnstable' has been replaced by 'xdelta'"; # Added 2026-02-17
   xdg-terminal-exec-mkhl = warnAlias "
     'xdg-terminal-exec-mkhl' has been removed due to being behind the xdg-terminal-exec spec for too long,
     use the reference implementation 'xdg-terminal-exec' instead.
