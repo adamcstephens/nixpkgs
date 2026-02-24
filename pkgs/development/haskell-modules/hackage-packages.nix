@@ -597176,8 +597176,6 @@ self: {
       ];
       description = "SMT Based Verification: Symbolic Haskell theorem prover using SMT solving";
       license = lib.licensesSpdx."BSD-3-Clause";
-      hydraPlatforms = lib.platforms.none;
-      broken = true;
     }
   ) { inherit (pkgs) z3; };
 
@@ -597284,7 +597282,6 @@ self: {
       description = "SMT Based Verification: Symbolic Haskell theorem prover using SMT solving";
       license = lib.licensesSpdx."BSD-3-Clause";
       hydraPlatforms = lib.platforms.none;
-      broken = true;
     }
   ) { inherit (pkgs) z3; };
 
