@@ -1638,7 +1638,7 @@ in
   tomcat = runTest ./tomcat.nix;
   tor = runTest ./tor.nix;
   tpm-ek = handleTest ./tpm-ek { };
-  tpm2 = runTest ./tpm2.nix;
+  tpm2 = import ./tpm2 { inherit runTest; };
   traccar = runTest ./traccar.nix;
   # tracee requires bpf
   tracee = handleTestOn [ "x86_64-linux" ] ./tracee.nix { };
