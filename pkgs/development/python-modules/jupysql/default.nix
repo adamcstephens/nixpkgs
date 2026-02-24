@@ -62,7 +62,8 @@ buildPythonPackage rec {
     sqlalchemy
     sqlglot
     sqlparse
-  ];
+  ]
+  ++ pyspark.optional-dependencies.connect;
 
   optional-dependencies.dev = [
     duckdb
