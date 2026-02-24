@@ -12453,8 +12453,6 @@ self: super: with self; {
 
   ploomber-core = callPackage ../development/python-modules/ploomber-core { };
 
-  ploomber-extension = callPackage ../development/python-modules/ploomber-extension { };
-
   plopp = callPackage ../development/python-modules/plopp { };
 
   plotext = callPackage ../development/python-modules/plotext { };
