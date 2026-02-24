@@ -13,6 +13,7 @@
   slurp,
   wl-clipboard,
   unixtools,
+  glib,
   bash,
   nix-update-script,
 }:
@@ -56,6 +57,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
           slurp
           wl-clipboard
           unixtools.getopt
+          glib
         ]
       }"
   '';
