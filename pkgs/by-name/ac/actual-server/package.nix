@@ -13,13 +13,13 @@
 let
   nodejs = nodejs_22;
   yarn-berry = yarn-berry_4.override { inherit nodejs; };
-  version = "26.2.0";
+  version = "26.2.1";
   src = fetchFromGitHub {
     name = "actualbudget-actual-source";
     owner = "actualbudget";
     repo = "actual";
     tag = "v${version}";
-    hash = "sha256-fnfDPN/9TfV1v/myNvCQ70Q0T2oW9XIyomsMdQKyoJo=";
+    hash = "sha256-8cRt1WKa4Yp6rE2Jzko0rKJoCp7+KSzVdtKcv/aKK8o=";
   };
   translations = fetchFromGitHub {
     name = "actualbudget-translations-source";
