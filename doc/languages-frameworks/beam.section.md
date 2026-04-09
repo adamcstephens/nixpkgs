@@ -6,41 +6,53 @@ In this document and related Nix expressions, we use the term, _BEAM_, to descri
 
 ## Available versions and deprecations schedule {#available-versions-and-deprecations-schedule}
 
+### Erlang OTP {#erlang}
+
+Nixpkgs follows upstream Erlang in their [support lifecycle](https://erlang.org/download/otp_versions_tree.html) and keeps up to the last 3 released versions of Erlang available. Due to upstream and NixOS release timings, this may mean removal of the oldest release prior to upstream fully dropping support.
+
 ### Elixir {#elixir}
 
-Nixpkgs follows the [official elixir deprecation schedule](https://hexdocs.pm/elixir/compatibility-and-deprecations.html) and keeps the last 5 released versions of Elixir available.
+Nixpkgs follows the [official elixir deprecation schedule](https://hexdocs.pm/elixir/compatibility-and-deprecations.html) and keeps up to the last 5 released versions of Elixir available.
 
 ## Structure {#beam-structure}
 
-All BEAM-related expressions are available via the top-level `beam` attribute, which includes:
+All BEAM-related expressions are available via top-level package sets. It is recommended to work with a single package set to ensure consistent versions.
 
-- `interpreters`: a set of compilers running on the BEAM, including multiple Erlang/OTP versions (`beam.interpreters.erlang_22`, etc), Elixir (`beam.interpreters.elixir`) and LFE (Lisp Flavoured Erlang) (`beam.interpreters.lfe`).
+- `beamPackages` - default OTP version
+- `beamMinimalPackages` - default OTP version, without wxwidgets, which saves ~1GB in closure size
 
-- `packages`: a set of package builders (Mix and rebar3), each compiled with a specific Erlang/OTP version, e.g. `beam.packages.erlang22`.
+There are also OTP version specific package sets, e.g. for OTP 28:
 
-The default Erlang compiler, defined by `beam.interpreters.erlang`, is aliased as `erlang`. The default BEAM package set is defined by `beam.packages.erlang` and aliased at the top level as `beamPackages`.
+- `beam28Packages` - default OTP version
+- `beamMinimal28Packages` - default OTP version, without wxwidgets, which saves ~1GB in closure size
 
-To create a package builder built with a custom Erlang version, use the lambda, `beam.packagesWith`, which accepts an Erlang/OTP derivation and produces a package builder similar to `beam.packages.erlang`.
+Inside each package set are:
 
-Many Erlang/OTP distributions available in `beam.interpreters` have versions with ODBC and/or Java enabled or without wx (no observer support). For example, there's `beam.interpreters.erlang_22_odbc_javac`, which corresponds to `beam.interpreters.erlang_22` and `beam.interpreters.erlang_22_nox`, which corresponds to `beam.interpreters.erlang_22`.
+- erlang itself (version comes from package set)
+- interpreters: elixir (multiple versions, e.g. elixir_1_18) and lfe
+- packages: rebar3, hex, etc
+- builders: mixRelease, buildRebar3, etc
+- hooks: for composing builders and packages
 
 ## Build Tools {#build-tools}
 
 ### Rebar3 {#build-tools-rebar3}
 
-We provide a version of Rebar3, under `rebar3`. We also provide a helper to fetch Rebar3 dependencies from a lockfile under `fetchRebar3Deps`.
+We provide a version of Rebar3, under `beamPackages.rebar3`. We also provide a helper to fetch Rebar3 dependencies from a lockfile under `beamPackages.fetchRebar3Deps`.
 
-We also provide a version on Rebar3 with plugins included, under `rebar3WithPlugins`. This package is a function which takes two arguments: `plugins`, a list of nix derivations to include as plugins (loaded only when specified in `rebar.config`), and `globalPlugins`, which should always be loaded by rebar3. Example: `rebar3WithPlugins { globalPlugins = [beamPackages.pc]; }`.
+We also provide a version on Rebar3 with plugins included, under `beamPackages.rebar3WithPlugins`. This package is a function which takes two arguments: `plugins`, a list of nix derivations to include as plugins (loaded only when specified in `rebar.config`), and `globalPlugins`, which should always be loaded by rebar3. Example: `beamPackages.rebar3WithPlugins { globalPlugins = [beamPackages.pc]; }`.
 
 When adding a new plugin it is important that the `name` attribute is the same as the atom used by rebar3 to refer to the plugin.
 
-### Mix & Erlang.mk {#build-tools-other}
+### Erlang.mk {#build-tools-erlangmk}
 
 Erlang.mk works exactly as expected. There is a bootstrap process that needs to be run, which is supported by the `buildErlangMk` derivation.
 
-For Elixir applications use `mixRelease` to make a release. See examples for more details.
+### Mix {#build-tools-mix}
 
-There is also a `buildMix` helper, whose behavior is closer to that of `buildErlangMk` and `buildRebar3`. The primary difference is that mixRelease makes a release, while buildMix only builds the package, making it useful for libraries and other dependencies.
+For Elixir applications that use [mix release](https://hexdocs.pm/mix/Mix.Release.html), use the `mixRelease` builder to make a release. See examples for more details.
+
+There is also a `buildMix` helper, whose behavior is closer to that of `buildErlangMk` and `buildRebar3`. The primary difference is that `mixRelease` makes a release, while `buildMix` only builds the package, which is more useful for libraries and other dependencies.
 
 ## How to Install BEAM Packages {#how-to-install-beam-packages}
 
@@ -75,17 +87,17 @@ pkgs.mkShell { packages = [ pkgs.beamPackages.rebar3 ]; }
 
 #### Rebar3 Packages {#rebar3-packages}
 
-The Nix function, `buildRebar3`, defined in `beam.packages.erlang.buildRebar3` and aliased at the top level, can be used to build a derivation that understands how to build a Rebar3 project.
+The Nix function, `beamPackages.buildRebar3`, defined in `beamPackages.buildRebar3` and aliased at the top level, can be used to build a derivation that understands how to build a Rebar3 project.
 
 If a package needs to compile native code via Rebar3's port compilation mechanism, add `compilePort = true;` to the derivation.
 
 #### Erlang.mk Packages {#erlang-mk-packages}
 
-Erlang.mk functions similarly to Rebar3, except we use `buildErlangMk` instead of `buildRebar3`.
+Erlang.mk functions similarly to Rebar3, except we use `beamPackages.buildErlangMk` instead of `beamPackages.buildRebar3`.
 
 #### Mix Packages {#mix-packages}
 
-`mixRelease` is used to make a release in the mix sense. Dependencies will need to be fetched with `fetchMixDeps` and passed to it.
+`beamPackages.mixRelease` is used to make a release in the mix sense. Dependencies will need to be fetched with `beamPackages.fetchMixDeps` and passed to it.
 
 #### mixRelease - Elixir Phoenix example {#mix-release-elixir-phoenix-example}
 
