@@ -1,0 +1,37 @@
+Fix out-of-bounds read in the hmtx trailing-advance-width optimization.
+
+The loop counts down a size_t while comparing against the last glyph's
+advance width. When every advance width matches it, the index decrements
+below zero, wraps to SIZE_MAX and indexes the vector out of bounds. On
+libc++ the hardened operator[] traps this, so every addfeatures/makeotf
+run crashes with SIGTRAP; on libstdc++ it is silently undefined behavior.
+
+Rewrite the scan to keep the index strictly positive and track the number
+of leading entries to retain instead.
+
+Not yet submitted upstream; the bug is present in afdko main as of 5.0.1.
+
+diff --git i/c/addfeatures/hotconv/hmtx.cpp w/c/addfeatures/hotconv/hmtx.cpp
+index 9336c986..f11cafd9 100644
+--- i/c/addfeatures/hotconv/hmtx.cpp
++++ w/c/addfeatures/hotconv/hmtx.cpp
+@@ -51,13 +51,14 @@ int hmtxFill(hotCtx g) {
+
+     /* Optimize metrics */
+     FWord width = hmtx.advanceWidth.back();
+-    size_t i;
+-    for (i = hmtx.advanceWidth.size() - 2; i >= 0; i--) {
+-        if (hmtx.advanceWidth[i] != width)
++    size_t keep = 1;
++    for (size_t i = hmtx.advanceWidth.size(); i > 1; i--) {
++        if (hmtx.advanceWidth[i - 2] != width) {
++            keep = i;
+             break;
++        }
+     }
+-    if (i + 2 != hmtx.advanceWidth.size())
+-        hmtx.advanceWidth.resize(i+2);
++    hmtx.advanceWidth.resize(keep);
+
+     return hmtx.Fill();
+ }

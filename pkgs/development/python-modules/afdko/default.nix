@@ -69,6 +69,11 @@ buildPythonPackage (finalAttrs: {
 
     # Use antlr4 runtime from nixpkgs and link it dynamically
     ./use-dynamic-system-antlr4-runtime.patch
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isDarwin [
+    # Fix an out-of-bounds read in hmtxFill that crashes addfeatures under
+    # libc++'s hardened operator[]; not yet submitted upstream.
+    ./fix-hmtx-advance-width-underflow.patch
   ];
 
   env = {
