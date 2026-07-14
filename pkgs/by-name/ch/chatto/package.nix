@@ -12,13 +12,13 @@
 }:
 let
   pname = "chatto";
-  version = "0.4.3";
+  version = "0.4.11";
 
   src = fetchFromGitHub {
     owner = "chattocorp";
     repo = "chatto";
     tag = "v${version}";
-    hash = "sha256-3Q65oSgRiN124rq/tgkHF62bywiDAKoDVFI3oW0GVnc=";
+    hash = "sha256-7UW6xMQEWvxKly60LXtQgHHoEUZNL3MJg6DrYDWf0ic=";
   };
 
   web = stdenvNoCC.mkDerivation (webFinalAttrs: {
@@ -29,7 +29,7 @@ let
       inherit (webFinalAttrs) pname version src;
       pnpm = pnpm_10;
       fetcherVersion = 4;
-      hash = "sha256-M83JXptIyoC8cZ1uyLd7rddXxhzkcl1pufeqnYV+eDI=";
+      hash = "sha256-kZUWWThAitZ3kgFGfuoigiiMoEsUsQF6Uu1BaVfoLDA=";
     };
 
     nativeBuildInputs = [
@@ -87,7 +87,12 @@ buildGoModule (finalAttrs: {
 
   passthru = {
     inherit web;
-    updateScript = nix-update-script { };
+    updateScript = nix-update-script {
+      extraArgs = [
+        "--subpackage"
+        "web"
+      ];
+    };
   };
 
   meta = {
