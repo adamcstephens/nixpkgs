@@ -12,13 +12,13 @@
 }:
 let
   pname = "chatto";
-  version = "0.4.13";
+  version = "0.4.18";
 
   src = fetchFromGitHub {
     owner = "chattocorp";
     repo = "chatto";
     tag = "v${version}";
-    hash = "sha256-ICgwqw/OetAHH3d3L9P5lxfzsLqKPCFVl5GcdYdcCMs=";
+    hash = "sha256-ew+p2C5EtQGWcgKc15eBCJGbLL8kJyYJ4jjEPIS9QUg=";
   };
 
   web = stdenvNoCC.mkDerivation (webFinalAttrs: {
