@@ -4,6 +4,8 @@
   fetchFromGitHub,
   writeText,
   elixir,
+  erlang,
+  removeReferencesTo,
 }:
 
 let
@@ -36,7 +38,10 @@ let
       __structuredAttrs = true;
       strictDeps = true;
 
-      nativeBuildInputs = [ elixir ];
+      nativeBuildInputs = [
+        elixir
+        removeReferencesTo
+      ];
 
       buildPhase = ''
         runHook preBuild
@@ -52,6 +57,9 @@ let
 
         mkdir -p $out/lib/erlang/lib
         cp -r ./_build/prod/lib/hex $out/lib/erlang/lib/
+
+        # leex records the path of the leexinc.hrl it included
+        find $out -name '*.beam' -exec remove-references-to -t ${erlang.buildErlang} {} +
 
         runHook postInstall
       '';
