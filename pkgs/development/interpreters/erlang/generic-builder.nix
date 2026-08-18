@@ -60,7 +60,6 @@ let
         libGLU
         wxwidgets_3_2
         libx11
-        wrapGAppsHook3
       ];
 
   major = builtins.head (builtins.splitVersion version);
@@ -93,13 +92,24 @@ stdenv.mkDerivation {
     LANG = "C.UTF-8";
   };
 
+  __structuredAttrs = true;
+  strictDeps = true;
+
   nativeBuildInputs = [
     makeWrapper
     perl
     gnum4
     libxslt
     libxml2
-  ];
+  ]
+  ++ optionals javacSupport [ openjdk11 ]
+  ++ optionals wxSupport (
+    if stdenv.hostPlatform.isDarwin then
+      # configure derives the -mmacosx-version-min flag from `wx-config --cc`
+      [ wxwidgets_3_2 ]
+    else
+      [ wrapGAppsHook3 ]
+  );
 
   buildInputs = [
     ncurses
@@ -108,7 +118,6 @@ stdenv.mkDerivation {
   ]
   ++ optionals wxSupport wxPackages2
   ++ optionals odbcSupport [ unixodbc ]
-  ++ optionals javacSupport [ openjdk11 ]
   ++ optionals enableSystemd [ systemd ];
 
   # disksup requires a shell
@@ -131,7 +140,10 @@ stdenv.mkDerivation {
   ++ optional enableHipe "--enable-hipe"
   ++ optional javacSupport "--with-javac"
   ++ optional odbcSupport "--with-odbc=${unixodbc}"
-  ++ optional wxSupport "--enable-wx"
+  ++ optionals wxSupport [
+    "--enable-wx"
+    "--with-wx-config=${lib.getExe' wxwidgets_3_2 "wx-config"}"
+  ]
   ++ optional enableSystemd "--enable-systemd"
   ++ optional stdenv.hostPlatform.isDarwin "--enable-darwin-64bit"
   # make[3]: *** [yecc.beam] Segmentation fault: 11
