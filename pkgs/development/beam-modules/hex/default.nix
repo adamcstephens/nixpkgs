@@ -33,7 +33,10 @@ let
 
       dontStrip = true;
 
-      buildInputs = [ elixir ];
+      __structuredAttrs = true;
+      strictDeps = true;
+
+      nativeBuildInputs = [ elixir ];
 
       buildPhase = ''
         runHook preBuild
