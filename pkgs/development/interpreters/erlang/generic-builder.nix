@@ -36,6 +36,7 @@
   openjdk11,
   openssl,
   perl,
+  removeReferencesTo,
   runtimeShell,
   stdenv,
   systemd,
@@ -107,7 +108,10 @@ stdenv.mkDerivation (finalAttrs: {
     libxslt
     libxml2
   ]
-  ++ optional isCross crossBuildErlang
+  ++ optionals isCross [
+    crossBuildErlang
+    removeReferencesTo
+  ]
   ++ optionals javacSupport [ openjdk11 ]
   ++ optionals wxSupport (
     if stdenv.hostPlatform.isDarwin then
@@ -171,6 +175,11 @@ stdenv.mkDerivation (finalAttrs: {
 
     wrapProgram $out/lib/erlang/bin/erl --prefix PATH ":" "${runtimePath}"
     wrapProgram $out/lib/erlang/bin/start_erl --prefix PATH ":" "${runtimePath}"
+  ''
+  + optionalString isCross ''
+    # yecc and leex record the path of the include they pulled from the bootstrap
+    find $out \( -name '*.beam' -o -name '*.erl' \) \
+      -exec remove-references-to -t ${crossBuildErlang} {} +
   '';
 
   passthru = {
