@@ -143,6 +143,9 @@ stdenv.mkDerivation (finalAttrs: {
     "--with-ssl=${lib.getOutput "out" openssl}"
     "--with-ssl-incl=${lib.getDev openssl}"
   ]
+  # without a sysroot the crypto, ssl and ssh applications are skipped outright,
+  # before --with-ssl is ever consulted
+  ++ optional isCross "erl_xcomp_sysroot=/"
   ++ optional enableThreads "--enable-threads"
   ++ optional enableSmpSupport "--enable-smp-support"
   ++ optional enableKernelPoll "--enable-kernel-poll"
