@@ -20,6 +20,7 @@
   odbcSupport ? false,
   parallelBuild ? true,
 
+  buildPackages,
   fetchFromGitHub,
   gawk,
   gnum4,
@@ -64,6 +65,10 @@ let
 
   major = builtins.head (builtins.splitVersion version);
 
+  isCross = stdenv.buildPlatform != stdenv.hostPlatform;
+
+  crossBuildErlang = buildPackages.beam_minimal.interpreters."erlang_${major}";
+
   enableSystemd =
     if (systemdSupport == null) then
       lib.meta.availableOn stdenv.hostPlatform systemd
@@ -75,7 +80,7 @@ let
     gnused
   ];
 in
-stdenv.mkDerivation {
+stdenv.mkDerivation (finalAttrs: {
   pname = "erlang" + optionalString javacSupport "_javac" + optionalString odbcSupport "_odbc";
   inherit version;
 
@@ -102,6 +107,7 @@ stdenv.mkDerivation {
     libxslt
     libxml2
   ]
+  ++ optional isCross crossBuildErlang
   ++ optionals javacSupport [ openjdk11 ]
   ++ optionals wxSupport (
     if stdenv.hostPlatform.isDarwin then
@@ -123,6 +129,9 @@ stdenv.mkDerivation {
   # disksup requires a shell
   postPatch = ''
     substituteInPlace lib/os_mon/src/disksup.erl --replace-fail '"sh ' '"${runtimeShell} '
+  ''
+  + optionalString isCross ''
+    patchShebangs --build erts/emulator/utils/find_cross_ycf
   '';
 
   debugInfo = enableDebugInfo;
@@ -162,6 +171,8 @@ stdenv.mkDerivation {
   '';
 
   passthru = {
+    buildErlang = if isCross then crossBuildErlang else finalAttrs.finalPackage;
+
     updateScript = nix-update-script {
       extraArgs = [
         "--version-regex"
@@ -191,4 +202,4 @@ stdenv.mkDerivation {
     teams = [ lib.teams.beam ];
     license = lib.licenses.asl20;
   };
-}
+})
