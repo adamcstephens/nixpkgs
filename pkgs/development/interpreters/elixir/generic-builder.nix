@@ -98,7 +98,7 @@ else
     };
 
     preBuild = ''
-      patchShebangs lib/elixir/scripts/generate_app.escript || true
+      patchShebangs --build lib/elixir/scripts/generate_app.escript || true
     '';
 
     # copy stdlib source files for LSP access
