@@ -14,6 +14,7 @@
   gnused,
   nix,
   rebar3-nix,
+  removeReferencesTo,
 }:
 
 let
@@ -176,6 +177,7 @@ let
       nativeBuildInputs = [
         erlang
         makeWrapper
+        removeReferencesTo
       ];
       unpackPhase = "true";
 
@@ -191,6 +193,10 @@ let
         '
         cp ${./rebar_ignore_deps.erl} rebar_ignore_deps.erl
         erlc -o $out/lib/rebar/ebin rebar_ignore_deps.erl
+
+        # leex records the path of the leexinc.hrl it included
+        find $out/lib -name '*.beam' -exec remove-references-to -t ${erlang.buildErlang} {} +
+
         mkdir -p $out/bin
         makeWrapper ${erlang}/bin/erl $out/bin/rebar3 \
           --set REBAR_GLOBAL_PLUGINS "${toString globalPluginNames} rebar_ignore_deps" \
