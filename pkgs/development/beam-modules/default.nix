@@ -82,9 +82,11 @@ makeScopeWithSplicing' {
       inherit (pkgs.callPackages ./hooks { })
         beamCopySourceHook
         beamModuleInstallHook
+        mixAppConfigPatchHook
         mixBuildDirHook
         mixCompileHook
-        mixAppConfigPatchHook
+        mixEscriptSetupHook
+        mixReleaseInstallHook
         rebar3CompileHook
         rebarDevendorPatchHook
         ;

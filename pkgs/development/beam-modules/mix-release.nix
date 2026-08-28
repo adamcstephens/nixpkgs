@@ -17,6 +17,9 @@
   gnugrep,
   gawk,
   mixBuildDirHook,
+  mixCompileHook,
+  mixEscriptSetupHook,
+  mixReleaseInstallHook,
 }@inputs:
 
 lib.extendMkDerivation {
@@ -41,6 +44,7 @@ lib.extendMkDerivation {
       mixEnv ? "prod",
       mixTarget ? "host",
       compileFlags ? [ ],
+      mixCompileFlags ? compileFlags,
       # Build a particular named release.
       # see https://hexdocs.pm/mix/1.12/Mix.Tasks.Release.html#content
       mixReleaseName ? "",
@@ -108,7 +112,14 @@ lib.extendMkDerivation {
             hex
             git
             mixBuildDirHook
+            mixCompileHook
           ]
+        ++ lib.optionals (escriptBinName != null) [
+          mixEscriptSetupHook
+        ]
+        ++ lib.optionals (escriptBinName == null) [
+          mixReleaseInstallHook
+        ]
         ++
           # Mix deps
           (builtins.attrValues mixNixDeps)
@@ -208,38 +219,6 @@ lib.extendMkDerivation {
           ''}
 
           runHook postConfigure
-        '';
-
-      buildPhase =
-        attrs.buildPhase or ''
-          runHook preBuild
-
-          mix compile --no-deps-check ${lib.concatStringsSep " " compileFlags}
-
-          ${lib.optionalString (escriptBinName != null) ''
-            mix escript.build --no-deps-check
-          ''}
-
-          runHook postBuild
-        '';
-
-      installPhase =
-        attrs.installPhase or ''
-          runHook preInstall
-
-          ${
-            if (escriptBinName != null) then
-              ''
-                mkdir -p $out/bin
-                cp ${escriptBinName} $out/bin
-              ''
-            else
-              ''
-                mix release ${mixReleaseName} --no-deps-check --path "$out"
-              ''
-          }
-
-          runHook postInstall
         '';
 
       postFixup = ''
