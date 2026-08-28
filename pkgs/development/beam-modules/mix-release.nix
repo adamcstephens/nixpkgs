@@ -20,6 +20,7 @@
   mixCompileHook,
   mixEscriptSetupHook,
   mixFodDepsSetupHook,
+  mixNixDepsSetupHook,
   mixReleaseInstallHook,
 }@inputs:
 
@@ -29,7 +30,6 @@ lib.extendMkDerivation {
   excludeDrvArgNames = [
     "compileFlags"
     "erlangCompilerOptions"
-    "mixNixDeps"
   ];
 
   extendDrvArgs =
@@ -120,23 +120,18 @@ lib.extendMkDerivation {
         ++ lib.optionals (mixFodDeps != null) [
           mixFodDepsSetupHook
         ]
+        ++ lib.optionals (mixNixDeps != { }) (
+          [
+            mixNixDepsSetupHook
+          ]
+          ++ (builtins.attrValues mixNixDeps)
+        )
         ++ lib.optionals (escriptBinName != null) [
           mixEscriptSetupHook
         ]
         ++ lib.optionals (escriptBinName == null) [
           mixReleaseInstallHook
-        ]
-        ++
-          # Mix deps
-          (builtins.attrValues mixNixDeps)
-        ++
-          # other compile-time deps
-          [
-            findutils
-            ripgrep
-            bbe
-            makeWrapper
-          ];
+        ];
 
       buildInputs = [
         bashNonInteractive
@@ -175,6 +170,16 @@ lib.extendMkDerivation {
       }
       // (attrs.env or { });
 
+      # postUnpack = ''
+      #   # Mix and Hex
+      #   export MIX_HOME="$TEMPDIR/mix"
+      #   export HEX_HOME="$TEMPDIR/hex"
+      #
+      #   # Rebar
+      #   export REBAR_GLOBAL_CONFIG_DIR="$TEMPDIR/rebar3"
+      #   export REBAR_CACHE_DIR="$TEMPDIR/rebar3.cache"
+      # ''
+      # + (attrs.postUnpack or "");
 
       configurePhase =
         attrs.configurePhase or ''
@@ -186,20 +191,6 @@ lib.extendMkDerivation {
           #
           # Phoenix projects for example will need compile.phoenix.
           mix deps.compile --no-deps-check --skip-umbrella-children
-
-          # Symlink dependency sources. This is needed for projects that require
-          # access to the source of their dependencies. For example, Phoenix
-          # projects need javascript assets to build asset bundles.
-          ${lib.optionalString (mixNixDeps != { }) ''
-            mkdir -p deps
-
-            ${lib.concatMapAttrsStringSep "\n" (name: dep: ''
-              dep_path="deps/${name}"
-              if [ -d "${dep}/src" ]; then
-                ln -sv ${dep}/src $dep_path
-              fi
-            '') mixNixDeps}
-          ''}
 
           runHook postConfigure
         '';
