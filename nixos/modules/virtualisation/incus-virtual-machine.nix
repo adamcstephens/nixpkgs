@@ -7,6 +7,8 @@
 
 let
   serialDevice = if pkgs.stdenv.hostPlatform.isx86 then "ttyS0" else "ttyAMA0";
+
+  efiArch = pkgs.stdenv.hostPlatform.efiArch;
 in
 {
   meta = {
@@ -44,21 +46,18 @@ in
       compression.enable = false;
       partitions = {
         esp = {
-          contents =
-            let
-              efiArch = pkgs.stdenv.hostPlatform.efiArch;
-            in
-            {
-              "/EFI/BOOT/BOOT${lib.toUpper efiArch}.EFI".source =
-                "${config.systemd.package}/lib/systemd/boot/efi/systemd-boot${efiArch}.efi";
-              "/EFI/Linux/${config.system.boot.loader.ukiFile}".source =
-                "${config.system.build.uki}/${config.system.boot.loader.ukiFile}";
-            };
+          contents = {
+            "/EFI/BOOT/BOOT${lib.toUpper efiArch}.EFI".source =
+              "${config.systemd.package}/lib/systemd/boot/efi/systemd-boot${efiArch}.efi";
+            "/EFI/Linux/${config.system.boot.loader.ukiFile}".source =
+              "${config.system.build.uki}/${config.system.boot.loader.ukiFile}";
+          };
+
           repartConfig = {
             Type = "esp";
             Format = "vfat";
             Label = "ESP";
-            SizeMinBytes = if pkgs.stdenv.hostPlatform.isx86_64 then "64M" else "96M";
+            SizeMinBytes = "256M";
           };
         };
         root = {
@@ -68,6 +67,7 @@ in
             Format = "ext4";
             Label = "nixos";
             Minimize = "guess";
+            PaddingMinBytes = "512M";
           };
         };
       };
