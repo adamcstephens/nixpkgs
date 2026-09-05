@@ -44,6 +44,10 @@ in
       version = null;
       sectorSize = 512;
       compression.enable = false;
+      mkfsOptions.ext4 = [
+        "-i"
+        "8192"
+      ];
       partitions = {
         esp = {
           contents = {
