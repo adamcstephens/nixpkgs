@@ -14,6 +14,7 @@ in
   };
 
   imports = [
+    ../image/repart.nix
     ./lxc-instance-common.nix
 
     ../profiles/qemu-guest.nix
@@ -26,6 +27,50 @@ in
       partitionTableType = "efi";
       format = "qcow2-compressed";
       copyChannel = config.system.installer.channel.enable;
+    };
+
+    system.build.repartImage = config.image.repart.image.overrideAttrs (previousAttrs: {
+      nativeBuildInputs = previousAttrs.nativeBuildInputs ++ [ pkgs.qemu-utils ];
+      postBuild = ''
+        qemu-img convert -f raw -O qcow2 -c ${config.image.baseName}.raw ${config.image.baseName}.qcow2
+        rm ${config.image.baseName}.raw
+      '';
+    });
+
+    image.repart = {
+      name = "nixos";
+      version = null;
+      sectorSize = 512;
+      compression.enable = false;
+      partitions = {
+        esp = {
+          contents =
+            let
+              efiArch = pkgs.stdenv.hostPlatform.efiArch;
+            in
+            {
+              "/EFI/BOOT/BOOT${lib.toUpper efiArch}.EFI".source =
+                "${config.systemd.package}/lib/systemd/boot/efi/systemd-boot${efiArch}.efi";
+              "/EFI/Linux/${config.system.boot.loader.ukiFile}".source =
+                "${config.system.build.uki}/${config.system.boot.loader.ukiFile}";
+            };
+          repartConfig = {
+            Type = "esp";
+            Format = "vfat";
+            Label = "ESP";
+            SizeMinBytes = if pkgs.stdenv.hostPlatform.isx86_64 then "64M" else "96M";
+          };
+        };
+        root = {
+          storePaths = [ config.system.build.toplevel ];
+          repartConfig = {
+            Type = "root";
+            Format = "ext4";
+            Label = "nixos";
+            Minimize = "guess";
+          };
+        };
+      };
     };
 
     fileSystems = {
