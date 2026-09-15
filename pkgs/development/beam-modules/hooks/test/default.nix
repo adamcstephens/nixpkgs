@@ -5,3 +5,4 @@ callPackage ./release.nix { }
 // callPackage ./filenames.nix { }
 // callPackage ./opt-outs.nix { }
 // callPackage ./setup.nix { }
+// callPackage ./build.nix { }

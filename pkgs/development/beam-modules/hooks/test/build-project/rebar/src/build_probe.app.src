@@ -1,0 +1,6 @@
+{application, build_probe, [
+    {description, "BEAM hook compiler test"},
+    {vsn, "0.1.0"},
+    {applications, [kernel, stdlib]},
+    {modules, []}
+]}.

@@ -41,16 +41,29 @@
   mixCompileHook = makeSetupHook {
     name = "mix-compile-hook.sh";
     meta.license = lib.licenses.mit;
+    passthru.tests = {
+      build = tests.beam-hooks.mixCompileHook-build;
+      customPhase = tests.beam-hooks.mixCompileHook-customPhase;
+    };
   } ./mix-compile-hook.sh;
 
   mixDepsCompileHook = makeSetupHook {
     name = "mix-deps-compile-hook.sh";
     meta.license = lib.licenses.mit;
+    passthru.tests = {
+      localDependency = tests.beam-hooks.mixDepsCompileHook-localDependency;
+      disabled = tests.beam-hooks.customBuildSteps;
+    };
   } ./mix-deps-compile-hook.sh;
 
   mixEscriptSetupHook = makeSetupHook {
     name = "mix-escript-setup-hook.sh";
     meta.license = lib.licenses.mit;
+    passthru.tests = {
+      buildAndInstall = tests.beam-hooks.mixEscriptSetupHook-buildAndInstall;
+      customInstall = tests.beam-hooks.mixEscriptSetupHook-customInstall;
+      disabled = tests.beam-hooks.customBuildSteps;
+    };
   } ./mix-escript-setup-hook.sh;
 
   mixFodDepsSetupHook = makeSetupHook {
@@ -73,6 +86,10 @@
   rebar3CompileHook = makeSetupHook {
     name = "rebar3-compile-hook.sh";
     meta.license = lib.licenses.mit;
+    passthru.tests = {
+      build = tests.beam-hooks.rebar3CompileHook-build;
+      customPhase = tests.beam-hooks.rebar3CompileHook-customPhase;
+    };
   } ./rebar3-compile-hook.sh;
 
   rebarDevendorPatchHook = makeSetupHook {
