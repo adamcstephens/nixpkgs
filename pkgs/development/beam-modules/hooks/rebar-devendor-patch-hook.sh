@@ -5,7 +5,7 @@
 rebarDevendorPatchHook() {
   echo "Executing rebarDevendorPatchHook"
 
-  rm -f rebar rebar
+  rm --force rebar rebar3
 
   echo "Finished rebarDevendorPatchHook"
 }
