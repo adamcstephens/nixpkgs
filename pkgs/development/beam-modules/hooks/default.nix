@@ -81,6 +81,16 @@
   mixReleaseSetupHook = makeSetupHook {
     name = "mix-release-setup-hook.sh";
     meta.license = lib.licenses.mit;
+    passthru.tests = {
+      release = tests.beam-hooks.mixReleaseSetupHook;
+      cookieDefault = tests.beam-hooks.releaseCookieDefault;
+      cookieRemove = tests.beam-hooks.releaseCookieRemove;
+      cookieKeep = tests.beam-hooks.releaseCookieKeep;
+      filenames = tests.beam-hooks.releaseFilenames;
+      debugStripped = tests.beam-hooks.releaseDebugStripped;
+      debugRetained = tests.beam-hooks.releaseDebugRetained;
+      fixupDisabled = tests.beam-hooks.releaseFixupDisabled;
+    };
   } ./mix-release-setup-hook.sh;
 
   rebar3CompileHook = makeSetupHook {

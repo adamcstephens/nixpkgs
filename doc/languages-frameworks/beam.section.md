@@ -380,6 +380,16 @@ These controls leave unrelated phase hooks enabled.
 In particular, `dontMixReleaseFixup` does not change `removeCookie` or `stripDebug`.
 Disabling a preparatory operation makes the caller responsible for supplying its replacement when subsequent hooks need it.
 
+The hook tests follow the Rust hook tests: they use the hooks independently of the BEAM builders, compile small local projects, and check the resulting modules, dependency assets, escripts, and releases.
+Escript tests invoke the selected Erlang runtime's `escript` interpreter explicitly.
+Each hook exposes its relevant cases through `passthru.tests`; the complete collection is also available as `tests.beam-hooks`.
+From the Nixpkgs checkout, run either the full collection or a single hook's tests:
+
+```shellSession
+$ nix-build --no-out-link --attr tests.beam-hooks
+$ nix-build --no-out-link --attr beamPackages.mixReleaseSetupHook.tests
+```
+
 ## How to Develop {#how-to-develop}
 
 ### Creating a Shell {#creating-a-shell}

@@ -6,3 +6,5 @@ callPackage ./release.nix { }
 // callPackage ./opt-outs.nix { }
 // callPackage ./setup.nix { }
 // callPackage ./build.nix { }
+// callPackage ./release-build.nix { }
+// callPackage ./strip-debug.nix { }
