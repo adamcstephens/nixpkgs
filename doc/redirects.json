@@ -1,4 +1,7 @@
 {
+  "beam-setup-hooks": [
+    "index.html#beam-setup-hooks"
+  ],
   "chap-build-helpers-finalAttrs": [
     "index.html#chap-build-helpers-finalAttrs"
   ],

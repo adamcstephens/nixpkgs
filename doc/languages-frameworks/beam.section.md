@@ -323,6 +323,63 @@ in
 }
 ```
 
+## Composing setup hooks {#beam-setup-hooks}
+
+The hooks in `beamPackages` can be used independently of `buildMix`, `buildRebar3`, and `mixRelease`, in the same way as the [Rust hooks](#rust).
+Add hooks and the tools they invoke to `nativeBuildInputs`.
+The hook derivations do not propagate those tools: the BEAM builders supply them.
+Choose Erlang, Elixir, Hex, and Rebar from one BEAM package set so their versions agree.
+The usual stdenv shell utilities are assumed throughout.
+
+| Hook | When it runs | Additional tools | Inputs and behavior |
+| --- | --- | --- | --- |
+| `beamCopySourceHook` | `postPatch` | None | Copies the patched source into `$out/src`, before compilation creates build artifacts. |
+| `beamModuleInstallHook` | `installPhase` | None | Requires `beamModuleName` and `version`. Installs `ebin`, `priv`, and `include` under `$out/lib/erlang/lib/<name>-<version>`. With `MIX_BUILD_PREFIX` set, reads the Mix build tree and the `shared` tree, including `src`. |
+| `mixAppConfigPatchHook` | `prePatch` | None | Removes the dependency's `config` directory. Optional `appConfigPath` supplies a replacement configuration directory. |
+| `mixBuildDirHook` | `preConfigure` | None | Requires `MIX_BUILD_PREFIX`. Links applications from the colon-separated `ERL_LIBS` into `_build/$MIX_BUILD_PREFIX/lib`. An empty library path is allowed. |
+| `mixCompileHook` | `buildPhase` | `elixir` | Runs `mix compile --no-deps-check`, with optional `mixCompileFlags`. |
+| `mixDepsCompileHook` | `postConfigure` | `elixir` | Compiles dependencies so their Mix tasks are available when the application builds. Dependency sources must already be accessible to Mix. |
+| `mixEscriptSetupHook` | `postBuild` and `installPhase` | `elixir` | Builds an escript and installs the executable named by `escriptBinName` into `$out/bin`. |
+| `mixFodDepsSetupHook` | `postUnpack` and `postConfigure` | None | Copies `mixFodDeps` into writable `$TEMPDIR/deps`, exports `MIX_DEPS_PATH`, then links it as the project's `deps` directory. |
+| `mixNixDepsSetupHook` | `postConfigure` | None | Links the `src` directories of the `mixNixDeps` attribute set into `deps/<name>`. Use `__structuredAttrs = true` so this attribute set becomes a Bash associative array. |
+| `mixReleaseSetupHook` | `installPhase`, `preFixup`, and optionally `postFixup` | `elixir`, `erlang`, `makeWrapper`, `findutils`, `ripgrep`, `bbe` | Builds and fixes up a release; see below for its release-specific inputs. |
+| `rebar3CompileHook` | `buildPhase` | `rebar3` | Runs `rebar3 bare compile` using the selected Rebar configuration and dependency code paths. |
+| `rebarDevendorPatchHook` | `prePatch` | None | Removes vendored `rebar` and `rebar3` executables, leaving project configuration intact. |
+
+For Mix hooks, set `MIX_ENV` and, when needed, `MIX_TARGET`.
+`MIX_BUILD_PREFIX` must match Mix's build-directory naming: for example, `prod` for the host target or `rpi_prod` for target `rpi`.
+The hooks do not fetch dependencies or initialize the entire Mix environment.
+Provide Hex, Rebar, and a writable home directory when the project needs them; the BEAM builders configure `HEX_OFFLINE`, `MIX_REBAR`, and `MIX_REBAR3` as appropriate.
+
+`mixReleaseSetupHook` accepts an optional `mixReleaseName`.
+It requires `erlang` to identify the original runtime whose references must be removed from releases containing ERTS.
+It also requires `mixReleaseRuntimePath`, a colon-separated executable search path prepended by the release wrappers.
+`mixRelease` supplies `lib.makeBinPath [ coreutils gnused gnugrep gawk ]`.
+`removeCookie` defaults to `true`; set the Nix boolean `false` to preserve `releases/COOKIE`.
+`stripDebug = true` additionally strips BEAM debug information after fixup; this can break applications that inspect that information at runtime.
+
+Phase-replacing hooks preserve an explicitly supplied `buildPhase` or `installPhase`.
+They also support `dontMixCompile`, `dontRebar3Compile`, `dontBeamModuleInstall`, `dontMixEscriptInstall`, and `dontMixReleaseInstall`, respectively.
+Custom phases must call their corresponding `runHook pre…` and `runHook post…` extension points if auxiliary hooks should still run.
+For example, overriding `installPhase` does not disable the release fixup hooks.
+Hooks registered in the same phase run in registration order, after the corresponding user-supplied `pre…` or `post…` hook.
+These are build-phase hooks: adding them to an interactive development shell does not itself unpack sources or prepare a dependency tree.
+
+The following auxiliary operations can be disabled individually by setting the corresponding Nix boolean to `true`:
+
+| Attribute | Operation disabled |
+| --- | --- |
+| `dontBeamCopySource` | Copying the patched source to `$out/src`. |
+| `dontMixAppConfigPatch` | Removing or replacing the project's configuration directory. |
+| `dontRebarDevendorPatch` | Removing vendored Rebar executables. |
+| `dontMixDepsCompile` | Compiling dependencies during `postConfigure`. |
+| `dontMixEscriptBuild` | Building the escript during `postBuild`; escript installation remains enabled. |
+| `dontMixReleaseFixup` | Removing Windows launchers, wrapping executables, and removing references to the original Erlang runtime. |
+
+These controls leave unrelated phase hooks enabled.
+In particular, `dontMixReleaseFixup` does not change `removeCookie` or `stripDebug`.
+Disabling a preparatory operation makes the caller responsible for supplying its replacement when subsequent hooks need it.
+
 ## How to Develop {#how-to-develop}
 
 ### Creating a Shell {#creating-a-shell}
