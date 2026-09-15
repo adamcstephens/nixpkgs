@@ -281,6 +281,8 @@ in
 
   rust-hooks = recurseIntoAttrs (callPackages ../build-support/rust/hooks/test { });
 
+  beam-hooks = recurseIntoAttrs (callPackages ../development/beam-modules/hooks/test { });
+
   prefer-remote-fetch = recurseIntoAttrs (
     callPackages ../build-support/prefer-remote-fetch/tests.nix { }
   );
