@@ -1,0 +1,5 @@
+{application, setup_source, [
+    {vsn, "1.0.0"},
+    {modules, [setup_source]},
+    {applications, [kernel, stdlib]}
+]}.

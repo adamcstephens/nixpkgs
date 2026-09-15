@@ -1,0 +1,8 @@
+--- a/src/setup_source.erl
++++ b/src/setup_source.erl
+@@ -1,4 +1,4 @@
+ -module(setup_source).
+ -export([message/0]).
+ 
+-message() -> original.
++message() -> patched.

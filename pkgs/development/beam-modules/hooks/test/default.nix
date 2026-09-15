@@ -4,3 +4,4 @@ callPackage ./release.nix { }
 // callPackage ./devendor.nix { }
 // callPackage ./filenames.nix { }
 // callPackage ./opt-outs.nix { }
+// callPackage ./setup.nix { }
