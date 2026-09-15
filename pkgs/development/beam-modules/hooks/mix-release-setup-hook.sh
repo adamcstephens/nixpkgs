@@ -15,11 +15,13 @@ mixReleaseInstallHook() {
 mixReleaseFixupHook() {
   echo "Executing mixReleaseFixupHook"
 
+  local f
+
   echo "Removing files for Microsoft Windows"
   rm -f "$out"/bin/*.bat
 
   echo "Wrapping programs in $out/bin with their runtime deps"
-  find "$out/bin/" -type f -executable | while read f; do
+  find "$out/bin/" -type f -executable -print0 | while IFS= read -r -d '' f; do
     wrapProgram "$f" --prefix PATH : "$mixReleaseRuntimePath"
   done
 
@@ -38,10 +40,12 @@ mixReleaseRemoveErlangReferences() {
 
   echo "Removing references to erlang"
 
+  local file
+
   # 1. remove references to erlang from plain text files
-  for file in $(rg "${erlang}/lib/erlang" "$out" --files-with-matches); do
-    substituteInPlace "$file" --replace "${erlang}/lib/erlang" "$out"
-  done
+  while IFS= read -r -d '' file; do
+    substituteInPlace "$file" --replace-fail "${erlang}/lib/erlang" "$out"
+  done < <(rg --fixed-strings --null --files-with-matches "${erlang}/lib/erlang" "$out")
 
   # 2. remove references to erlang from .beam files
   #
@@ -49,14 +53,14 @@ mixReleaseRemoveErlangReferences() {
   # by ERL_COMPILER_OPTIONS.
 
   # 3. remove references to erlang from normal binary files
-  for file in $(rg "${erlang}/lib/erlang" "$out" --files-with-matches --binary --iglob '!*.beam'); do
+  while IFS= read -r -d '' file; do
     echo "removing references to erlang in $file"
     # use bbe to substitute strings in binary files, because using substituteInPlace
     # on binaries will raise errors
     bbe -e "s|${erlang}/lib/erlang|$out|" -o "$file".tmp "$file"
     rm -f "$file"
     mv "$file".tmp "$file"
-  done
+  done < <(rg --fixed-strings --null --files-with-matches --binary --iglob '!*.beam' "${erlang}/lib/erlang" "$out")
 
   # References to erlang should be removed from output after above processing.
 }
