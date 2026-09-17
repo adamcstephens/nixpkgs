@@ -33,13 +33,17 @@ let
       name = "forgejo-${forgejoPackage.version}-${type}";
       meta.maintainers = lib.teams.forgejo.members;
 
-      nodes = {
+      containers = {
         server =
           { config, pkgs, ... }:
           {
-            virtualisation.memorySize = 2047;
             services.forgejo = {
               enable = true;
+              dump = {
+                enable = true;
+                type = "tar.zst";
+                file = "dump.tar.zst";
+              };
               package = forgejoPackage;
               database = { inherit type; };
               settings.service.DISABLE_REGISTRATION = true;
@@ -52,6 +56,7 @@ let
               settings.metrics.ENABLED = true;
               secrets.metrics.TOKEN = pkgs.writeText "metrics_secret" metricSecret;
             };
+
             environment.systemPackages = [
               config.services.forgejo.package
               pkgs.gnupg
@@ -60,67 +65,34 @@ let
             ];
             services.openssh.enable = true;
 
-            specialisation.gitea-actions-runner = {
-              inheritParentConfig = true;
-              configuration.services.gitea-actions-runner = {
-                package = pkgs.forgejo-runner;
-                instances."test" = {
-                  enable = true;
-                  name = "ci";
-                  url = "http://localhost:3000";
-                  labels = [
+            services.forgejo-runner = {
+              instances."test" = {
+                enable = true;
+                settings = {
+                  runner.labels = [
                     # type ":host" does not depend on docker/podman/lxc
                     "native:host"
                   ];
-                  tokenFile = "/var/lib/forgejo/runner_token";
+                  server.connections.default = {
+                    url = "http://localhost:3000";
+                    uuid = "@UUID@";
+                  };
                 };
+                secrets.server.connections.default.token_url = "/forgejo-runner_token";
               };
             };
-            specialisation.forgejo-runner = {
-              inheritParentConfig = true;
-              configuration = (
-                { config, ... }:
 
-                {
-                  services.forgejo-runner = {
-                    instances."test" = {
-                      enable = true;
-                      settings = {
-                        runner.labels = [
-                          # type ":host" does not depend on docker/podman/lxc
-                          "native:host"
-                        ];
-                        server.connections.default = {
-                          url = "http://localhost:3000";
-                          uuid = "@UUID@";
-                        };
-                      };
-                      secrets.server.connections.default.token_url = "/forgejo-runner_token";
-                    };
-                  };
-
-                  # FIXME: Remove once upstream supports uuid_url just like token_url
-                  systemd.services.forgejo-runner-test = {
-                    preStart = ''
-                      cp -v ${config.services.forgejo-runner.instances."test".configFile} ./config.yaml
-                      chmod u+w ./config.yaml
-                      ${lib.getExe pkgs.replace-secret} "@UUID@" "$CREDENTIALS_DIRECTORY/UUID" ./config.yaml
-                      chmod u-w ./config.yaml
-                    '';
-                    serviceConfig = {
-                      ExecStart = lib.mkForce "${lib.getExe config.services.forgejo-runner.package} daemon --config ./config.yaml";
-                      LoadCredential = [ "UUID:/forgejo-runner_uuid" ];
-                    };
-                  };
-                }
-              );
-            };
-            specialisation.dump = {
-              inheritParentConfig = true;
-              configuration.services.forgejo.dump = {
-                enable = true;
-                type = "tar.zst";
-                file = "dump.tar.zst";
+            # FIXME: Remove once upstream supports uuid_url just like token_url
+            systemd.services.forgejo-runner-test = {
+              preStart = ''
+                cp -v ${config.services.forgejo-runner.instances."test".configFile} ./config.yaml
+                chmod u+w ./config.yaml
+                ${lib.getExe pkgs.replace-secret} "@UUID@" "$CREDENTIALS_DIRECTORY/UUID" ./config.yaml
+                chmod u-w ./config.yaml
+              '';
+              serviceConfig = {
+                ExecStart = lib.mkForce "${lib.getExe config.services.forgejo-runner.package} daemon --config ./config.yaml";
+                LoadCredential = [ "UUID:/forgejo-runner_uuid" ];
               };
             };
           };
@@ -144,13 +116,11 @@ let
       };
 
       testScript =
-        { nodes, ... }:
+        { containers, ... }:
         let
           inherit (import ./ssh-keys.nix pkgs) snakeOilPrivateKey snakeOilPublicKey;
-          serverSystem = nodes.server.system.build.toplevel;
-          dumpFile =
-            with nodes.server.specialisation.dump.configuration.services.forgejo.dump;
-            "${backupDir}/${file}";
+          serverSystem = containers.server.system.build.toplevel;
+          dumpFile = with containers.server.services.forgejo.dump; "${backupDir}/${file}";
           remoteUri = "forgejo@server:test/repo";
           remoteUriCheckoutAction = "forgejo@server:test/checkout";
 
@@ -271,7 +241,7 @@ let
 
               return status == "success"
 
-          with subtest("Testing deprecated gitea-actions-runner registration and action workflow"):
+          with subtest("Testing forgejo-runner registration and action workflow"):
               # mirror "actions/checkout" action
               client.succeed("cp -R ${checkoutActionSource}/ /tmp/checkout")
               client.succeed("git -C /tmp/checkout init")
@@ -294,17 +264,7 @@ let
                   + f"-H 'Authorization: token {api_token}'"
                   + ' -d \'{"has_actions":true}\'''
               )
-              server.succeed(
-                  "su -l forgejo -c 'GITEA_WORK_DIR=/var/lib/forgejo forgejo actions generate-runner-token' | sed 's/^/TOKEN=/' | tee /var/lib/forgejo/runner_token"
-              )
-              server.succeed("${serverSystem}/specialisation/gitea-actions-runner/bin/switch-to-configuration test")
-              server.wait_for_unit("gitea-runner-test.service")
-              server.succeed("journalctl -o cat -u gitea-runner-test.service | grep -q 'Runner registered successfully'")
 
-              with server.nested("Waiting for the workflow run to be successful"):
-                  retry(lambda _: poll_workflow_action_status(0), 180)
-
-          with subtest("Testing forgejo-runner registration and action workflow"):
               runner_registration_response = server.succeed(
                   "curl --fail http://localhost:3000/api/v1/admin/actions/runners "
                   + f"-H 'Authorization: token {api_token}' "
@@ -315,7 +275,6 @@ let
               server.succeed(f"echo {runner_registration.get("token")} > /forgejo-runner_token")
               server.succeed(f"echo {runner_registration.get("uuid")} > /forgejo-runner_uuid")
 
-              server.succeed("${serverSystem}/specialisation/forgejo-runner/bin/switch-to-configuration test")
               server.wait_for_unit("forgejo-runner-test.service")
               server.succeed("journalctl -o cat -u forgejo-runner-test.service | grep -q 'declared successfully'")
 
@@ -326,7 +285,6 @@ let
                   retry(lambda _: poll_workflow_action_status(1), 180)
 
           with subtest("Testing backup service"):
-              server.succeed("${serverSystem}/specialisation/dump/bin/switch-to-configuration test")
               server.systemctl("start forgejo-dump")
               assert "Zstandard compressed data" in server.succeed("file ${dumpFile}")
               server.copy_from_machine("${dumpFile}")
