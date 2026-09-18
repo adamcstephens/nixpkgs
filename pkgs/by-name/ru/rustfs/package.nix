@@ -20,7 +20,7 @@ let
 
   console = stdenv.mkDerivation (finalAttrs: {
     pname = "rustfs-console";
-    version = "0.1.26";
+    version = "0.1.28";
     __structuredAttrs = true;
     __darwinAllowLocalNetworking = true;
 
@@ -28,7 +28,7 @@ let
       owner = "rustfs";
       repo = "console";
       tag = "v${finalAttrs.version}";
-      hash = "sha256-1X7ZcprtVXybV58mdrqbvERNHfs8Y/3klGDPObhUt9o=";
+      hash = "sha256-hrA1BQ4tfLS65oKSBXrEjRv2cr3rkLv6W7FRlXANcHQ=";
     };
 
     pnpmDeps = fetchPnpmDeps {
@@ -57,14 +57,14 @@ let
 in
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "rustfs";
-  version = "1.0.0-rc.6";
+  version = "1.0.1-preview.6";
   __structuredAttrs = true;
 
   src = fetchFromGitHub {
     owner = "rustfs";
     repo = "rustfs";
     tag = finalAttrs.version;
-    hash = "sha256-+ZcLd6WlT5X48u4LHYQVw+QgaVotpEN4JLKy8N86ejM=";
+    hash = "sha256-BDnQvzZRGM9jrMPo20fZVEnmcB/AlDe6kzVcToDhK+I=";
   };
 
   postPatch = ''
@@ -72,7 +72,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     cp -rL ${finalAttrs.console} ./rustfs/static
   '';
 
-  cargoHash = "sha256-0VMunv3UYMEwf6msTSbL/Eo1vRBLfo9zNixPkc0+kcU=";
+  cargoHash = "sha256-Lh0bSO9TNoMrESnEdJSRCuuDTOcpR+62cKBtm4Z5Y2Y=";
 
   nativeBuildInputs = [
     protobuf
