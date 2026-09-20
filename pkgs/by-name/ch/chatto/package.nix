@@ -12,13 +12,13 @@
 }:
 let
   pname = "chatto";
-  version = "0.4.20";
+  version = "0.5.0-beta.4";
 
   src = fetchFromGitHub {
     owner = "chattocorp";
     repo = "chatto";
     tag = "v${version}";
-    hash = "sha256-ZyvA8oC3W812934j0bW1S2tzpYW94Dne0DyuQr4ILZY=";
+    hash = "sha256-J/N5/8mletVPnTxjLalPtA9cWA+r7Bnw0IxAwRVgYXA=";
   };
 
   web = stdenvNoCC.mkDerivation (webFinalAttrs: {
@@ -29,7 +29,7 @@ let
       inherit (webFinalAttrs) pname version src;
       pnpm = pnpm_10;
       fetcherVersion = 4;
-      hash = "sha256-kZUWWThAitZ3kgFGfuoigiiMoEsUsQF6Uu1BaVfoLDA=";
+      hash = "sha256-J0eN5v/MYL/b7Rql5RUHZkvCemAKs6Fg3CNMpVHlTcY=";
     };
 
     nativeBuildInputs = [
@@ -43,6 +43,7 @@ let
       runHook preBuild
 
       pnpm --filter @chatto/api-types build
+      pnpm --filter @chatto/lingua build
       pnpm --filter chatto-frontend build
 
       runHook postBuild
@@ -65,9 +66,12 @@ buildGoModule (finalAttrs: {
 
   modRoot = "cli";
 
-  vendorHash = "sha256-Fif+HL2HVGdy1gdTFWVP5aEvkRtoACW1PtH8RxidddQ=";
+  vendorHash = "sha256-EiNzJh70o7DPrZCx+aECUcQk/JHNOwrEalckSUCYqMg=";
 
-  env.CGO_ENABLED = 0;
+  env = {
+    CGO_ENABLED = 0;
+    GOWORK = "off";
+  };
 
   postPatch = ''
     install -D -m644 LICENSES/AGPL-3.0-or-later.txt cli/cmd/embedded/LICENSE
