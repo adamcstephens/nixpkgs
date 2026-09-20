@@ -12,13 +12,13 @@
 }:
 let
   pname = "chatto";
-  version = "0.5.0-beta.4";
+  version = "0.5.0-beta.5";
 
   src = fetchFromGitHub {
     owner = "chattocorp";
     repo = "chatto";
     tag = "v${version}";
-    hash = "sha256-J/N5/8mletVPnTxjLalPtA9cWA+r7Bnw0IxAwRVgYXA=";
+    hash = "sha256-695CcK3VcZmQbS9zd9L/y4eDO/Fyf4r/ITWf0Kifd3c=";
   };
 
   web = stdenvNoCC.mkDerivation (webFinalAttrs: {
@@ -29,7 +29,7 @@ let
       inherit (webFinalAttrs) pname version src;
       pnpm = pnpm_10;
       fetcherVersion = 4;
-      hash = "sha256-J0eN5v/MYL/b7Rql5RUHZkvCemAKs6Fg3CNMpVHlTcY=";
+      hash = "sha256-BnPm5UgMOQLHjmDIDT8Fix6osTf+u2e14Mbzan+LQUs=";
     };
 
     nativeBuildInputs = [
