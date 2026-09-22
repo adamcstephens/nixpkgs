@@ -629,6 +629,7 @@
   ./services/development/bloop.nix
   ./services/development/corteza.nix
   ./services/development/distccd.nix
+  ./services/development/doop.nix
   ./services/development/gemstash.nix
   ./services/development/hoogle.nix
   ./services/development/jupyter/default.nix
