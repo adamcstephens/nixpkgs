@@ -55,8 +55,6 @@ in
       requires = [ "network-online.target" ];
 
       environment = {
-        # can we allow chrome to sandbox itself?
-        # CHROME_NO_SANDBOX = "1";
         HOME = "%S/doop";
         PUPPETEER_SKIP_DOWNLOAD = "true";
         PUPPETEER_CACHE_DIR = "%S/doop/.cache/puppeteer";
@@ -67,8 +65,7 @@ in
         enable = true;
         mode = "full-apivfs";
         binSh = null;
-        # TODO: need to pass /etc/fonts and its dependents here or in BindReadOnlyPaths
-        # packages = [ ];
+        packages = lib.optionals config.fonts.fontconfig.enable [ config.environment.etc.fonts.source ];
       };
 
       serviceConfig = {
@@ -94,7 +91,8 @@ in
           "/etc/static/nsswitch.conf"
 
           "/etc/resolv.conf"
-        ];
+        ]
+        ++ lib.optionals config.fonts.fontconfig.enable [ "/etc/fonts" ];
 
         AmbientCapabilities = "";
         CapabilityBoundingSet = [ "" ] ++ lib.optionals (cfg.port < 1024) [ "CAP_NET_BIND_SERVICE" ];
@@ -118,24 +116,28 @@ in
           "AF_INET6"
           "AF_UNIX"
         ];
-        RestrictNamespaces = true;
+        # Chromium creates these namespaces for its own sandbox.
+        RestrictNamespaces = [
+          "user"
+          "pid"
+          "net"
+        ];
         RestrictRealtime = true;
         RestrictSUIDSGID = true;
         SystemCallArchitectures = "native";
         SystemCallFilter = [
           "@system-service"
+          "@pkey"
           "~@privileged @resources"
+          # Optional scheduling requests must fail without killing Chromium.
+          "~setpriority:EPERM"
+          "~sched_setaffinity:EPERM"
+          # Chromium drops capabilities and chroots inside its user namespace.
+          "capset"
+          "chroot"
         ];
         UMask = "0077";
       };
     };
   };
 }
-
-# these may be needed for chromium to work
-# RestrictNamespaces=no
-# SystemCallFilter=
-# RestrictAddressFamilies=AF_NETLINK
-# ProcSubset=all
-# this could be a test, but unsure
-# ExecStartPre=-/nix/store/8frzcyqw1kdwq76qj9kicmwwia6jw0qr-chromium-unwrapped-153.0.8010.52/libexec/chromium/chromium --headless=new --no-sandbox --disable-dev-shm-usage --user-data-dir=/tmp/doop-chromium-probe --dump-dom about:blank

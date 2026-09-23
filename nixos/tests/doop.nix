@@ -2,7 +2,7 @@
 {
   name = "doop";
 
-  nodes.machine = {
+  nodes.machine = { pkgs, ... }: {
     services.doop = {
       enable = true;
       settings = {
@@ -10,6 +10,8 @@
         BETTER_AUTH_URL = "http://localhost:4400";
       };
     };
+
+    fonts.packages = [ pkgs.dejavu_fonts ];
 
     virtualisation.memorySize = 2048;
   };
@@ -57,5 +59,31 @@
         assert png[:8] == b"\x89PNG\r\n\x1a\n"
         assert struct.unpack(">II", png[16:24]) == (320, 200)
         machine.copy_from_machine("/tmp/frame.png")
+
+    with subtest("Chromium subprocesses survive the syscall filter"):
+        kernel_log = machine.succeed("journalctl --boot --dmesg --no-pager")
+        assert not any(
+            "type=1326" in line and 'comm="chromium"' in line
+            for line in kernel_log.splitlines()
+        ), kernel_log
+
+    with subtest("Chromium keeps its renderer sandbox"):
+        service_pid = machine.succeed("systemctl show doop.service --property=MainPID --value").strip()
+        renderer_pid = machine.succeed("pgrep --full --oldest 'chromium --type=renderer'").strip()
+        for namespace in ("user", "pid", "net"):
+            service_ns = machine.succeed(f"readlink /proc/{service_pid}/ns/{namespace}")
+            renderer_ns = machine.succeed(f"readlink /proc/{renderer_pid}/ns/{namespace}")
+            assert service_ns != renderer_ns, namespace
+        service_status = dict(
+            line.split(":", 1)
+            for line in machine.succeed(f"cat /proc/{service_pid}/status").splitlines()
+        )
+        renderer_status = dict(
+            line.split(":", 1)
+            for line in machine.succeed(f"cat /proc/{renderer_pid}/status").splitlines()
+        )
+        assert renderer_status["NoNewPrivs"].strip() == "1"
+        assert int(renderer_status["CapEff"], 16) == 0
+        assert int(renderer_status["Seccomp_filters"]) > int(service_status["Seccomp_filters"])
   '';
 }
