@@ -60,7 +60,6 @@ in
         HOME = "%S/doop";
         PUPPETEER_SKIP_DOWNLOAD = "true";
         PUPPETEER_CACHE_DIR = "%S/doop/.cache/puppeteer";
-        WorkingDirectory = "%S/doop";
       }
       // cfg.settings;
 
@@ -75,6 +74,7 @@ in
       serviceConfig = {
         ExecStart = lib.getExe cfg.package;
         EnvironmentFile = cfg.environmentFiles;
+        WorkingDirectory = "%S/doop";
 
         DynamicUser = true;
         StateDirectory = "doop";
@@ -94,7 +94,6 @@ in
           "/etc/static/nsswitch.conf"
 
           "/etc/resolv.conf"
-          "/etc/static/resolv.conf"
         ];
 
         AmbientCapabilities = "";
