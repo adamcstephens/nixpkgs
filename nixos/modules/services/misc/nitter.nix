@@ -382,7 +382,7 @@ in
         # Some parts of Nitter expect `public` folder in working directory,
         # see https://github.com/zedeus/nitter/issues/414
         WorkingDirectory = "${cfg.package}/share/nitter";
-        ExecStart = "${cfg.package}/bin/nitter";
+        ExecStart = lib.getExe cfg.package;
         ExecStartPre = "${preStart}";
         AmbientCapabilities = lib.mkIf (cfg.server.port < 1024) [ "CAP_NET_BIND_SERVICE" ];
         Restart = "on-failure";
