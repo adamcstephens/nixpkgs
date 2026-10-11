@@ -1,7 +1,7 @@
 {
   lib,
   fetchPnpmDeps,
-  electron_39,
+  electron_42,
   makeDesktopItem,
   ffmpeg-headless,
   poppler-utils,
@@ -13,7 +13,7 @@
   pnpm,
 }:
 let
-  electron = electron_39;
+  electron = electron_42;
 in
 server.overrideAttrs (
   finalAttrs: previousAttrs: {
