@@ -19,7 +19,7 @@
 }:
 let
   nodejs = nodejs_24;
-  pnpm = pnpm_10.override { inherit nodejs; };
+  pnpm = pnpm_10.override { nodejs-slim = nodejs; };
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "open-design";
