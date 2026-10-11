@@ -1,6 +1,7 @@
 {
   lib,
   stdenv,
+  callPackage,
   fetchFromGitHub,
   fetchPnpmDeps,
   pnpmConfigHook,
@@ -134,6 +135,10 @@ stdenv.mkDerivation (finalAttrs: {
 
   passthru.updateScript = nix-update-script {
     extraArgs = [ "--version-regex=^open-design-v(.*)$" ];
+  };
+  passthru.desktop = callPackage ./desktop.nix {
+    server = finalAttrs.finalPackage;
+    inherit nodejs pnpm;
   };
 
   meta = {
