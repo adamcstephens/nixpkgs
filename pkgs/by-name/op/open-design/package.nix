@@ -137,7 +137,7 @@ stdenv.mkDerivation (finalAttrs: {
     extraArgs = [ "--version-regex=^open-design-v(.*)$" ];
   };
   passthru.desktop = callPackage ./desktop.nix {
-    server = finalAttrs.finalPackage;
+    inherit (finalAttrs) src version meta;
     inherit nodejs pnpm;
   };
 
