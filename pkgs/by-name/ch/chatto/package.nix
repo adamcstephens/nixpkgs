@@ -6,35 +6,41 @@
   nix-update-script,
   nodejs,
   pnpmConfigHook,
-  pnpm_10,
+  pnpm_11,
   stdenvNoCC,
   writableTmpDirAsHomeHook,
 }:
 let
   pname = "chatto";
-  version = "0.5.0-beta.10";
+  version = "0.5.0-beta.26";
+  patchLinkDirectory = ''
+    substituteInPlace packages/chatto-client/package.json \
+      --replace-fail '"linkDirectory": false' '"linkDirectory": true'
+  '';
 
   src = fetchFromGitHub {
     owner = "chattocorp";
     repo = "chatto";
     tag = "v${version}";
-    hash = "sha256-NcJIqwZeBORwniGe0vJO1ZGFCJyb+W+4eBqkMDy6ErU=";
+    hash = "sha256-AumYjH/ETuA/WxMWwPY7OQNyftv0MlbVB2te5cr60bA=";
   };
 
   web = stdenvNoCC.mkDerivation (webFinalAttrs: {
     pname = "${pname}-web";
     inherit src version;
+    postPatch = patchLinkDirectory;
 
     pnpmDeps = fetchPnpmDeps {
       inherit (webFinalAttrs) pname version src;
-      pnpm = pnpm_10;
+      pnpm = pnpm_11;
       fetcherVersion = 4;
-      hash = "sha256-vzyu2F7BOusca/110oSQFl9nno4IqB49cfPSw8TdZBU=";
+      postPatch = patchLinkDirectory;
+      hash = "sha256-DhMucO1CvMp0WPBS3rM/70in2A67eq2xsM97wG9QY+k=";
     };
 
     nativeBuildInputs = [
       nodejs
-      pnpm_10
+      pnpm_11
       pnpmConfigHook
       writableTmpDirAsHomeHook
     ];
@@ -42,8 +48,7 @@ let
     buildPhase = ''
       runHook preBuild
 
-      pnpm --filter @chatto/api-types build
-      pnpm --filter @chatto/lingua build
+      pnpm --filter @chatto/translatto build
       pnpm --filter chatto-frontend build
 
       runHook postBuild
@@ -66,7 +71,7 @@ buildGoModule (finalAttrs: {
 
   modRoot = "cli";
 
-  vendorHash = "sha256-p8QFk7OPCMp9iKshbCNJrWYbJv1XjcduxGsj0MPGmzk=";
+  vendorHash = "sha256-why5SEGsr2Ne2r5iHOepMnPRWlqbt26FPKlMjhnf6t4=";
 
   env = {
     CGO_ENABLED = 0;
