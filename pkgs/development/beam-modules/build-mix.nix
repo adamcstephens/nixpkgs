@@ -2,13 +2,13 @@
   elixir,
   erlang,
   hex,
+  beamDependencyPolicy,
   beamCopySourceHook,
   beamModuleInstallHook,
   mixBuildDirHook,
   mixCompileHook,
   mixAppConfigPatchHook,
 
-  cacert,
   lib,
   stdenv,
   writeText,
@@ -37,6 +37,9 @@ lib.extendMkDerivation {
       erlangDeterministicBuilds ? true,
       ...
     }@args:
+    let
+      policy = beamDependencyPolicy { names = [ args.name ]; };
+    in
     {
       name = "erlang${erlang.version}-${args.name}-${finalAttrs.version}";
 
@@ -59,6 +62,7 @@ lib.extendMkDerivation {
         # some hooks need name-version, but we've overridden name above for the nix package
         beamModuleName = args.name;
       }
+      // policy.env
       // (args.env or { });
 
       __structuredAttrs = true;
@@ -74,27 +78,28 @@ lib.extendMkDerivation {
         addToSearchPath ERL_LIBS "$1/lib/erlang/lib"
       '';
 
-      nativeBuildInputs = (args.nativeBuildInputs or [ ]) ++ [
-        erlang
-        elixir
-        hex
+      buildInputs = (args.buildInputs or [ ]) ++ policy.buildInputs;
 
-        beamCopySourceHook
-        beamModuleInstallHook
-        mixBuildDirHook
-        mixCompileHook
-        mixAppConfigPatchHook
-      ];
+      nativeBuildInputs =
+        (args.nativeBuildInputs or [ ])
+        ++ policy.nativeBuildInputs
+        ++ [
+          erlang
+          elixir
+          hex
+
+          policy.hook
+          beamCopySourceHook
+          beamModuleInstallHook
+          mixBuildDirHook
+          mixCompileHook
+          mixAppConfigPatchHook
+        ];
 
       propagatedBuildInputs = (args.propagatedBuildInputs or [ ]) ++ beamDeps;
 
       passthru = (args.passthru or { }) // {
         inherit beamDeps;
       };
-    }
-    // lib.optionalAttrs (args.name == "castore") {
-      postPatch = (args.postPatch or "") + ''
-        cp ${cacert}/etc/ssl/certs/ca-bundle.crt priv/cacerts.pem
-      '';
     };
 }

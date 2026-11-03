@@ -1,5 +1,4 @@
 {
-  cacert,
   lib,
   makeSetupHook,
 }:
@@ -41,7 +40,6 @@
 
   mixFodDepsSetupHook = makeSetupHook {
     name = "mix-fod-deps-setup-hook";
-    substitutions.caBundle = "${cacert}/etc/ssl/certs/ca-bundle.crt";
     meta.license = lib.licenses.mit;
   } ./mix-fod-deps-setup-hook.sh;
 

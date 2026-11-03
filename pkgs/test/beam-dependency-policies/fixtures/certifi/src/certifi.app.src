@@ -1,0 +1,1 @@
+{application, certifi, [{description, "Local certificate policy fixture"}, {vsn, "0.1.0"}, {modules, [certifi]}, {registered, []}, {applications, [kernel, stdlib]}]}.

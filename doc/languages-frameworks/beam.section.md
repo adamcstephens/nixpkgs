@@ -97,6 +97,63 @@ pkgs.mkShell { packages = [ pkgs.beamPackages.rebar3 ]; }
 
 ## Packaging BEAM Applications {#packaging-beam-applications}
 
+### Dependency policies {#beam-dependency-policies}
+
+`beamPackages.beamDependencyPolicies` is a registry of dependency-specific packaging rules, keyed by the BEAM dependency or application name. Each rule is an attribute set with any of the following optional attributes:
+
+- `sourcePatch`: a shell script run with the dependency's source directory as the working directory.
+- `nativeBuildInputs`: build tools needed by the dependency.
+- `buildInputs`: libraries needed by the dependency.
+- `env`: an attribute set of environment variables.
+
+The default registry provides these rules:
+
+- `castore` and `certifi` copy the CA bundle from Nixpkgs' `cacert` into `priv/cacerts.pem`, replacing the bundled certificates.
+- `vix` adds `pkg-config` to `nativeBuildInputs`, adds `vips` and `glib.dev` to `buildInputs`, and sets `VIX_COMPILATION_MODE=PLATFORM_PROVIDED_LIBVIPS` so Vix uses the packaged libvips rather than downloading it.
+
+For per-dependency derivations, `buildMix`, `buildRebar3`, and `buildErlangMk` automatically apply the rule matching the dependency's name. This also applies to dependencies generated for `mixNixDeps`; package recipes do not need to repeat the default native inputs or certificate patches. A `sourcePatch` runs during `postPatch`, after package patching and before `beamCopySourceHook` exports the dependency source for downstream builds.
+
+With `mixRelease` and `mixFodDeps`, rules without build inputs, including source-only rules such as `castore` and `certifi`, are applied automatically to matching dependencies in the writable copy of `MIX_DEPS_PATH`. Rules with nonempty `nativeBuildInputs` or `buildInputs` must instead be selected explicitly through `mixRelease`'s `beamNativePolicies` argument, which defaults to `[]` and is supported only with `mixFodDeps`. Environment variables alone do not require explicit selection. For example, a release whose fetched dependencies include `vix` needs:
+
+```nix
+{
+  beamNativePolicies = [ "vix" ];
+}
+```
+
+The selected rules add their inputs and environment variables to the release derivation, where Mix compiles the fetched dependencies. During `postPatch`, a completeness check inspects the writable dependency tree: if a dependency has a known input-bearing rule that was not selected, the build fails with the rule's name and an instruction to add it to `beamNativePolicies`. This check covers registered rules, not every possible native dependency. Dependency discovery happens at build time; policy selection does not use import from derivation (IFD), and `fetchMixDeps` remains a source fetcher.
+
+All fetched dependencies compile in the same release build environment, so policy `env` values are shared across them, not isolated per dependency. A caller's `env` attributes take precedence over policy defaults. If dependencies need incompatible values for the same variable, use per-dependency derivations with `mixNixDeps` instead.
+
+Use `overrideScope` on the BEAM package set to add custom rules or make application-specific exceptions. Extend the previous registry to keep the other defaults:
+
+```nix
+let
+  beamPackages = pkgs.beamPackages.overrideScope (final: prev: {
+    beamDependencyPolicies = prev.beamDependencyPolicies // {
+      # Leave this dependency's bundled certificates unchanged in this scope.
+      castore = { };
+
+      my_nif = {
+        nativeBuildInputs = [ pkgs.pkg-config ];
+        buildInputs = [ pkgs.zlib ];
+        env.MY_NIF_USE_SYSTEM_ZLIB = "1";
+        sourcePatch = ''
+          substituteInPlace Makefile \
+            --replace-fail "pkg-config zlib" "pkg-config --static zlib"
+        '';
+      };
+    };
+  });
+in
+beamPackages.mixRelease {
+  # Alongside the usual release and mixFodDeps attributes:
+  beamNativePolicies = [ "my_nif" ];
+}
+```
+
+An empty rule disables that dependency's default policy in the overridden scope. Import generated `mixNixDeps` with the same overridden `beamPackages` so its dependency derivations use the custom registry too.
+
 ### Erlang Applications {#packaging-erlang-applications}
 
 #### Rebar3 Packages {#rebar3-packages}

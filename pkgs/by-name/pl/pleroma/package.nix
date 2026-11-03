@@ -8,9 +8,6 @@
   cmake,
   nixosTests,
   writeText,
-  vips,
-  pkg-config,
-  glib,
   fetchpatch,
 }:
 
@@ -89,15 +86,6 @@ beamPackages.mixRelease rec {
         postPatch = ''
           sed -i '/listeners: \[Phoenix.CodeReloader\]/d' mix.exs
         '';
-      };
-
-      vix = prev.vix.override {
-        nativeBuildInputs = [ pkg-config ];
-        buildInputs = [
-          vips
-          glib.dev
-        ];
-        env.VIX_COMPILATION_MODE = "PLATFORM_PROVIDED_LIBVIPS";
       };
 
       # This needs a different version (1.0.14 -> 1.0.18) to build properly with

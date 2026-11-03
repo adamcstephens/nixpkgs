@@ -1,0 +1,1 @@
+{application, policy_native, [{description, "Local native policy fixture"}, {vsn, "0.1.0"}, {modules, [policy_native]}, {registered, []}, {applications, [kernel, stdlib]}]}.

@@ -6,6 +6,7 @@
   which,
   gitMinimal,
   wget,
+  beamDependencyPolicy,
   lib,
 }:
 
@@ -28,6 +29,7 @@
 }@attrs:
 
 let
+  policy = beamDependencyPolicy { names = [ name ]; };
   debugInfoFlag = lib.optionalString (enableDebugInfo || erlang.debugInfo) "+debug_info";
 
   shell =
@@ -58,14 +60,19 @@ let
           else
             setupHook;
 
-        nativeBuildInputs = (attrs.nativeBuildInputs or [ ]) ++ [
-          erlang
-          perl
-          which
-          gitMinimal
-          wget
-        ];
-        inherit buildInputs;
+        nativeBuildInputs =
+          (attrs.nativeBuildInputs or [ ])
+          ++ policy.nativeBuildInputs
+          ++ [
+            policy.hook
+            erlang
+            perl
+            which
+            gitMinimal
+            wget
+          ];
+        buildInputs = buildInputs ++ policy.buildInputs;
+        env = policy.env // (attrs.env or { });
         propagatedBuildInputs = beamDeps;
 
         __structuredAttrs = true;

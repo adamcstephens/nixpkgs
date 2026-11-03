@@ -1,12 +1,12 @@
 {
   erlang,
+  beamDependencyPolicy,
   beamCopySourceHook,
   beamModuleInstallHook,
   rebar3CompileHook,
   rebar3WithPlugins,
   rebarDevendorPatchHook,
 
-  cacert,
   libyaml,
   openssl,
 
@@ -36,6 +36,7 @@ lib.extendMkDerivation {
       ...
     }@args:
     let
+      policy = beamDependencyPolicy { names = [ args.name ]; };
       rebar3Custom = rebar3WithPlugins {
         plugins = buildPlugins;
       };
@@ -44,20 +45,27 @@ lib.extendMkDerivation {
       pname = args.name;
       name = "erlang${erlang.version}-${args.name}-${finalAttrs.version}";
 
-      nativeBuildInputs = (args.nativeBuildInputs or [ ]) ++ [
-        erlang
-        rebar3Custom
+      nativeBuildInputs =
+        (args.nativeBuildInputs or [ ])
+        ++ policy.nativeBuildInputs
+        ++ [
+          erlang
+          rebar3Custom
 
-        rebarDevendorPatchHook
-        beamCopySourceHook
-        beamModuleInstallHook
-        rebar3CompileHook
-      ];
+          policy.hook
+          rebarDevendorPatchHook
+          beamCopySourceHook
+          beamModuleInstallHook
+          rebar3CompileHook
+        ];
 
-      buildInputs = (args.buildInputs or [ ]) ++ [
-        openssl
-        libyaml
-      ];
+      buildInputs =
+        (args.buildInputs or [ ])
+        ++ [
+          openssl
+          libyaml
+        ]
+        ++ policy.buildInputs;
 
       propagatedBuildInputs = lib.unique beamDeps;
 
@@ -73,6 +81,7 @@ lib.extendMkDerivation {
 
         beamModuleName = args.name;
       }
+      // policy.env
       // (args.env or { });
 
       setupHook = writeText "setupHook.sh" ''
@@ -87,10 +96,5 @@ lib.extendMkDerivation {
       passthru = {
         inherit beamDeps;
       };
-    }
-    // lib.optionalAttrs (args.name == "certifi") {
-      postPatch = (args.postPatch or "") + ''
-        cp ${cacert}/etc/ssl/certs/ca-bundle.crt priv/cacerts.pem
-      '';
     };
 }

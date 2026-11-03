@@ -134,6 +134,8 @@ in
 
   hooks = recurseIntoAttrs (callPackage ./hooks { });
 
+  beam-dependency-policies = recurseIntoAttrs (callPackage ./beam-dependency-policies { });
+
   cc-multilib-gcc = callPackage ./cc-wrapper/multilib.nix { stdenv = pkgs.gccMultiStdenv; };
   cc-multilib-clang = callPackage ./cc-wrapper/multilib.nix { stdenv = pkgs.clangMultiStdenv; };
 
