@@ -7,6 +7,7 @@
   mixBuildDirHook,
   mixCompileHook,
   mixAppConfigPatchHook,
+  mixNixDepsSetupHook,
 
   cacert,
   lib,
@@ -37,6 +38,15 @@ lib.extendMkDerivation {
       erlangDeterministicBuilds ? true,
       ...
     }@args:
+    let
+      registry = import ./hooks/mix-nix-deps.nix { inherit lib writeText; };
+      dependencies = lib.listToAttrs (
+        map (dependency: {
+          name = dependency.beamModuleName or (dependency.packageName or (lib.getName dependency));
+          value = dependency;
+        }) beamDeps
+      );
+    in
     {
       name = "erlang${erlang.version}-${args.name}-${finalAttrs.version}";
 
@@ -52,6 +62,19 @@ lib.extendMkDerivation {
         MIX_BUILD_PREFIX = (if mixTarget == "host" then "" else "${mixTarget}_") + "${mixEnv}";
         MIX_DEBUG = if enableDebugInfo then 1 else 0;
         HEX_OFFLINE = 1;
+        MIX_NIX_DEPS = registry dependencies;
+        MIX_NIX_LOCKLESS = 1;
+        mixNixElixir = "${elixir}/bin/elixir";
+        beamToolchainErlang = "${erlang}/bin/erl";
+        beamToolchainElixir = "${elixir}/bin/elixir";
+        beamSourceGitUrl = args.src.gitRepoUrl or "";
+        beamSourceGitRev = args.src.rev or "";
+        beamSourceGitSubmodules =
+          if builtins.isAttrs args.src && args.src ? fetchSubmodules then
+            lib.boolToString args.src.fetchSubmodules
+          else
+            "";
+        beamSourceGitRootDir = args.src.rootDir or "";
 
         LANG = if stdenv.hostPlatform.isLinux then "C.UTF-8" else "C";
         LC_CTYPE = if stdenv.hostPlatform.isLinux then "C.UTF-8" else "UTF-8";
@@ -68,8 +91,7 @@ lib.extendMkDerivation {
 
       # add to ERL_LIBS so other modules can find at runtime.
       # http://erlang.org/doc/man/code.html#code-path
-      # Mix also searches the code path when compiling with the --no-deps-check flag
-      # This is used by package builders such as mixRelease
+      # Mix uses an explicit registry of precompiled dependencies.
       setupHook = writeText "setupHook.sh" ''
         addToSearchPath ERL_LIBS "$1/lib/erlang/lib"
       '';
@@ -84,12 +106,15 @@ lib.extendMkDerivation {
         mixBuildDirHook
         mixCompileHook
         mixAppConfigPatchHook
+        mixNixDepsSetupHook
       ];
 
       propagatedBuildInputs = (args.propagatedBuildInputs or [ ]) ++ beamDeps;
 
       passthru = (args.passthru or { }) // {
         inherit beamDeps;
+        beamModuleName = args.name;
+        beamArtifact = "${finalAttrs.finalPackage}/lib/erlang/lib/${args.name}-${finalAttrs.version}";
       };
     }
     // lib.optionalAttrs (args.name == "castore") {

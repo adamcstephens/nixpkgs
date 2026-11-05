@@ -1,12 +1,14 @@
 {
   cacert,
   lib,
+  gitMinimal,
   makeSetupHook,
 }:
 {
   beamCopySourceHook = makeSetupHook {
     name = "beam-copy-source-hook.sh";
     meta.license = lib.licenses.mit;
+    propagatedBuildInputs = [ gitMinimal ];
   } ./beam-copy-source-hook.sh;
 
   beamModuleInstallHook = makeSetupHook {
@@ -47,6 +49,9 @@
 
   mixNixDepsSetupHook = makeSetupHook {
     name = "mix-nix-deps-setup-hook";
+    substitutions = {
+      bootstrap = ./mix-precompiled.exs;
+    };
     meta.license = lib.licenses.mit;
   } ./mix-nix-deps-setup-hook.sh;
 

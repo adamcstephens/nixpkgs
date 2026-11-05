@@ -1,21 +1,33 @@
 # shellcheck shell=bash
 #
-# Symlink dependency sources. This is needed for projects that require
-# access to the source of their dependencies. For example, Phoenix
-# projects need javascript assets to build asset bundles.
+# Keep the Mix launcher local to this build. Subprocesses inherit both PATH and
+# the registry, so every Mix invocation uses the same precompiled dependencies.
 
-mixNixDepsPostConfigure() {
-  echo "Executing mixNixDepsPostConfigure"
-
-  local name
-  for name in "${!mixNixDeps[@]}"; do
-    if [ -d "${mixNixDeps[$name]}/src" ]; then
-      mkdir -p deps
-      ln -sv "${mixNixDeps[$name]}/src" "deps/$name"
-    fi
-  done
-
-  echo "Finished mixNixDepsPostConfigure"
+mixNixDepsPreUnpack() {
+  local launcherDir="$NIX_BUILD_TOP/.mix-nix-bin"
+  mkdir --parents "$launcherDir"
+  printf '#!/usr/bin/env bash\nexec %q %q "$@"\n' \
+    "$mixNixElixir" '@bootstrap@' > "$launcherDir/mix"
+  chmod +x "$launcherDir/mix"
+  patchShebangs "$launcherDir/mix"
+  export PATH="$launcherDir:$PATH"
+  export MIX_NIX_DEPS
 }
 
-postConfigureHooks+=(mixNixDepsPostConfigure)
+mixNixDepsPreConfigure() {
+  echo "Executing mixNixDepsPreConfigure"
+
+  local app source artifact
+  while IFS=$'\t' read -r app source artifact; do
+    [ -n "$app" ] || continue
+    mkdir --parents "${MIX_DEPS_PATH:-deps}"
+    if [ ! -e "${MIX_DEPS_PATH:-deps}/$app" ]; then
+      ln --symbolic --verbose "$source" "${MIX_DEPS_PATH:-deps}/$app"
+    fi
+  done < "$MIX_NIX_DEPS"
+
+  echo "Finished mixNixDepsPreConfigure"
+}
+
+preUnpackHooks+=(mixNixDepsPreUnpack)
+preConfigureHooks+=(mixNixDepsPreConfigure)

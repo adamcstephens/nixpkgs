@@ -142,42 +142,15 @@ Practical steps:
 - run `mix2nix > mix_deps.nix` in the upstream repo.
 - pass `mixNixDeps = with pkgs; import ./mix_deps.nix { inherit lib beamPackages; };` as an argument to mixRelease.
 
-If there are git dependencies.
+`buildMix` uses `beamDeps`, and `mixRelease` uses `mixNixDeps`, as an explicit registry of precompiled dependencies. A build-local `mix` launcher registers a Mix SCM adapter before running the ordinary Mix CLI. Dependency declarations and lockfiles remain unchanged; normal Mix commands, including `mix deps.compile`, reuse the Nix artifacts while the root project and unregistered dependencies compile normally. Subprocesses inherit the launcher.
 
-- You'll need to fix the version artificially in mix.exs and regenerate the mix.lock with fixed version (on upstream). This will enable you to run `mix2nix > mix_deps.nix`.
-- From the mix_deps.nix file, remove the dependencies that had git versions and pass them as an override to the import function.
+The adapter checks application versions, compile-time configuration, toolchain compatibility, and source locks before exposing artifacts through writable build-directory metadata. Incompatible artifacts fail instead of being rebuilt. Hex dependencies must retain their `.hex` source metadata. Git dependencies must retain their checkout metadata or use a `fetchgit` source with the original repository URL and full locked revision; source archives without Git provenance are insufficient. External path dependencies are selected by their registered application name.
 
-```nix
-{
-  mixNixDeps = import ./mix.nix {
-    inherit beamPackages lib;
-    overrides = (
-      final: prev: {
-        # mix2nix does not support git dependencies yet,
-        # so we need to add them manually
-        prometheus_ex = beamPackages.buildMix rec {
-          name = "prometheus_ex";
-          version = "3.0.5";
+Hex library archives commonly omit `mix.lock`. When the root lockfile is entirely absent, `buildMix` derives resolution data in memory from the registered dependencies' real Hex or Git source metadata and validates it with the original SCM. It does not write a lockfile or replace entries in an existing, empty, or incomplete lockfile. This mode is limited to `buildMix`; `mixRelease` requires the consumer's source locks.
 
-          # Change the argument src with the git src that you actually need
-          src = fetchFromGitLab {
-            domain = "git.pleroma.social";
-            group = "pleroma";
-            owner = "elixir-libraries";
-            repo = "prometheus.ex";
-            rev = "a4e9beb3c1c479d14b352fd9d6dd7b1f6d7deee5";
-            hash = "sha256-U17LlN6aGUKUFnT4XyYXppRN+TvUBIBRHEUsfeIiGOw=";
-          };
-          # you can re-use the same beamDeps argument as generated
-          beamDeps = with final; [ prometheus ];
-        };
-      }
-    );
-  };
-}
-```
+Build dependencies with the same package set and compile-time configuration as their consumer. `mix deps.compile --force` is not supported for precompiled dependencies.
 
-You will need to run the build process once to fix the hash to correspond to your new git src.
+For Git dependencies, add `buildMix` or `buildRebar3` derivations to the generated import's `overrides` argument. Use the repository URL and full revision from the existing `mix.lock` with `fetchgit`, and list each dependency's `beamDeps`. Do not replace Git declarations with Hex declarations or regenerate the downstream lockfile to bypass source validation.
 
 ##### FOD {#fixed-output-derivation}
 

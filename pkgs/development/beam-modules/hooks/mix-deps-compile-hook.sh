@@ -9,7 +9,7 @@
 mixDepsCompileHook() {
   echo "Executing mixDepsCompileHook"
 
-  mix deps.compile --no-deps-check --skip-umbrella-children
+  mix deps.compile --skip-umbrella-children
 
   echo "Finished mixDepsCompileHook"
 }

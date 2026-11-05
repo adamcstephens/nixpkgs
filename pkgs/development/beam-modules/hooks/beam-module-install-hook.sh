@@ -16,7 +16,7 @@ beamModuleInstallHook() {
 
   # replace if mix project
   if [ -n "${MIX_BUILD_PREFIX-}" ]; then
-    fromDir=(_build/{$MIX_BUILD_PREFIX,shared}/lib/"${beamModuleName}"/{src,ebin,priv,include})
+    fromDir=(_build/{$MIX_BUILD_PREFIX,shared}/lib/"${beamModuleName}"/{src,ebin,priv,include,.mix})
   fi
 
   for reldir in "${fromDir[@]}"; do

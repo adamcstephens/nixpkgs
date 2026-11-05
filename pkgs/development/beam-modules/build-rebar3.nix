@@ -72,6 +72,15 @@ lib.extendMkDerivation {
           "[${lib.concatStringsSep "," options}]";
 
         beamModuleName = args.name;
+        beamToolchainErlang = "${erlang}/bin/erl";
+        beamSourceGitUrl = args.src.gitRepoUrl or "";
+        beamSourceGitRev = args.src.rev or "";
+        beamSourceGitSubmodules =
+          if builtins.isAttrs args.src && args.src ? fetchSubmodules then
+            lib.boolToString args.src.fetchSubmodules
+          else
+            "";
+        beamSourceGitRootDir = args.src.rootDir or "";
       }
       // (args.env or { });
 
@@ -84,8 +93,10 @@ lib.extendMkDerivation {
       }
       // (args.meta or { });
 
-      passthru = {
+      passthru = (args.passthru or { }) // {
         inherit beamDeps;
+        beamModuleName = args.name;
+        beamArtifact = "${finalAttrs.finalPackage}/lib/erlang/lib/${args.name}-${finalAttrs.version}";
       };
     }
     // lib.optionalAttrs (args.name == "certifi") {

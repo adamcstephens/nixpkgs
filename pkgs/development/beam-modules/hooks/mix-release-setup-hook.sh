@@ -5,7 +5,11 @@ mixReleaseInstallHook() {
 
   runHook preInstall
 
-  mix release ${mixReleaseName:+"$mixReleaseName"} --no-deps-check --path "$out"
+  local flags=()
+  if [ -z "${MIX_NIX_DEPS-}" ]; then
+    flags+=(--no-deps-check)
+  fi
+  mix release ${mixReleaseName:+"$mixReleaseName"} "${flags[@]}" --path "$out"
 
   runHook postInstall
 

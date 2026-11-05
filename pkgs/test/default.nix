@@ -132,6 +132,8 @@ in
 
   haskell = callPackage ./haskell { };
 
+  beam = recurseIntoAttrs (callPackage ../development/beam-modules/tests { });
+
   hooks = recurseIntoAttrs (callPackage ./hooks { });
 
   cc-multilib-gcc = callPackage ./cc-wrapper/multilib.nix { stdenv = pkgs.gccMultiStdenv; };

@@ -7,8 +7,11 @@ mixCompileHook() {
 
   local flagsArray=()
   concatTo flagsArray mixCompileFlags
+  if [ -z "${MIX_NIX_DEPS-}" ]; then
+    flagsArray+=(--no-deps-check)
+  fi
 
-  mix compile --no-deps-check "${flagsArray[@]}"
+  mix compile "${flagsArray[@]}"
 
   runHook postBuild
 
