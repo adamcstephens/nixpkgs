@@ -12,7 +12,7 @@
 }:
 let
   pname = "chatto";
-  version = "0.5.0-beta.26";
+  version = "0.5.0-rc.2";
   patchLinkDirectory = ''
     substituteInPlace packages/chatto-client/package.json \
       --replace-fail '"linkDirectory": false' '"linkDirectory": true'
@@ -22,7 +22,7 @@ let
     owner = "chattocorp";
     repo = "chatto";
     tag = "v${version}";
-    hash = "sha256-AumYjH/ETuA/WxMWwPY7OQNyftv0MlbVB2te5cr60bA=";
+    hash = "sha256-IcbgAtKobFAJ+5t50g4cuw288jGPPMrVYEhXQm4/ufE=";
   };
 
   web = stdenvNoCC.mkDerivation (webFinalAttrs: {
@@ -35,7 +35,7 @@ let
       pnpm = pnpm_11;
       fetcherVersion = 4;
       postPatch = patchLinkDirectory;
-      hash = "sha256-DhMucO1CvMp0WPBS3rM/70in2A67eq2xsM97wG9QY+k=";
+      hash = "sha256-KJXq6iqRdhxVqBp76i6/VnAmTmbjAgSA1pzla6YiYXg=";
     };
 
     nativeBuildInputs = [
