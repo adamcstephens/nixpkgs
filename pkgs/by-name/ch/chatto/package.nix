@@ -12,7 +12,7 @@
 }:
 let
   pname = "chatto";
-  version = "0.5.0-rc.2";
+  version = "0.5.0";
   patchLinkDirectory = ''
     substituteInPlace packages/chatto-client/package.json \
       --replace-fail '"linkDirectory": false' '"linkDirectory": true'
@@ -22,7 +22,7 @@ let
     owner = "chattocorp";
     repo = "chatto";
     tag = "v${version}";
-    hash = "sha256-IcbgAtKobFAJ+5t50g4cuw288jGPPMrVYEhXQm4/ufE=";
+    hash = "sha256-+iv66KPYRrVsvBF+ABqv9sJQVlYyqWpLxc8Rn0Y4nt0=";
   };
 
   web = stdenvNoCC.mkDerivation (webFinalAttrs: {
@@ -35,7 +35,7 @@ let
       pnpm = pnpm_11;
       fetcherVersion = 4;
       postPatch = patchLinkDirectory;
-      hash = "sha256-KJXq6iqRdhxVqBp76i6/VnAmTmbjAgSA1pzla6YiYXg=";
+      hash = "sha256-zWPgXWxFKowfv6Octc/aa/4E8xECnDKO28mruUnCRVU=";
     };
 
     nativeBuildInputs = [
@@ -71,7 +71,7 @@ buildGoModule (finalAttrs: {
 
   modRoot = "cli";
 
-  vendorHash = "sha256-why5SEGsr2Ne2r5iHOepMnPRWlqbt26FPKlMjhnf6t4=";
+  vendorHash = "sha256-9x9frBVjonpOmhtl7QEXao6h3doMVszTPyIk3xK/rAg=";
 
   env = {
     CGO_ENABLED = 0;
