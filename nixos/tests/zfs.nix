@@ -7,14 +7,14 @@
 let
   inherit (pkgs) lib;
 
-  makeZfsTest =
-    {
-      kernelPackages,
-      zfsPackage,
-      extraTest ? "",
-    }:
-    runTest {
-      name = zfsPackage.kernelModuleAttribute;
+  packages = {
+    series_2_3 = pkgs.zfs_2_3;
+    series_2_4 = pkgs.zfs_2_4;
+    unstable = pkgs.zfs_unstable;
+  };
+
+  tests = {
+    basic = {
       meta.maintainers = with lib.maintainers; [ elvishjerricco ];
 
       nodes.machine =
@@ -39,8 +39,6 @@ let
           boot.loader.timeout = 0;
           boot.loader.efi.canTouchEfiVariables = true;
           networking.hostId = "deadbeef";
-          boot.kernelPackages = kernelPackages;
-          boot.zfs.package = zfsPackage;
           boot.supportedFilesystems = [ "zfs" ];
 
           environment.systemPackages = [ pkgs.parted ];
@@ -201,28 +199,131 @@ let
                   "systemctl start forcepool.mount",
                   "mount | grep forcepool",
               )
-        ''
-        + extraTest;
+        '';
 
     };
 
+    expand-partitions = {
+      nodes = {
+        machine =
+          { pkgs, ... }:
+          {
+            environment.systemPackages = [ pkgs.parted ];
+            boot.supportedFilesystems = [ "zfs" ];
+            networking.hostId = "00000000";
+
+            virtualisation = {
+              emptyDiskImages = [
+                20480
+                20480
+                20480
+                20480
+                20480
+                20480
+              ];
+            };
+
+            specialisation.resize.configuration = {
+              services.zfs.expandOnBoot = [ "tank" ];
+            };
+          };
+      };
+
+      testScript =
+        { nodes, ... }:
+        ''
+          start_all()
+          machine.wait_for_unit("default.target")
+          print(machine.succeed('mount'))
+
+          print(machine.succeed('parted --script /dev/vdb -- mklabel gpt'))
+          print(machine.succeed('parted --script /dev/vdb -- mkpart primary 1M 70M'))
+
+          print(machine.succeed('parted --script /dev/vdc -- mklabel gpt'))
+          print(machine.succeed('parted --script /dev/vdc -- mkpart primary 1M 70M'))
+
+          print(machine.succeed('zpool create tank mirror /dev/vdb1 /dev/vdc1 mirror /dev/vdd /dev/vde mirror /dev/vdf /dev/vdg'))
+          print(machine.succeed('zpool list -v'))
+          print(machine.succeed('mount'))
+          start_size = int(machine.succeed('df -k --output=size /tank | tail -n1').strip())
+
+          print(machine.succeed("/run/current-system/specialisation/resize/bin/switch-to-configuration test >&2"))
+          machine.wait_for_unit("zpool-expand-pools.service")
+          machine.wait_for_unit("zpool-expand@tank.service")
+
+          print(machine.succeed('zpool list -v'))
+          new_size = int(machine.succeed('df -k --output=size /tank | tail -n1').strip())
+
+          if (new_size - start_size) > 20000000:
+            print("Disk grew appropriately.")
+          else:
+            print(f"Disk went from {start_size} to {new_size}, which doesn't seem right.")
+            exit(1)
+        '';
+    };
+
+    zfs-mount-generator = {
+      nodes.machine =
+        { ... }:
+        {
+          boot.supportedFilesystems = [ "zfs" ];
+          networking.hostId = "00000000";
+          virtualisation = {
+            emptyDiskImages = [ 4096 ];
+          };
+        };
+
+      testScript = ''
+        from datetime import timedelta
+
+        machine.wait_for_unit("multi-user.target")
+
+        machine.succeed(
+            "zpool create -O mountpoint=none test /dev/vdb",
+
+            # Enable list caching for the test pool.
+            "mkdir /etc/zfs/zfs-list.cache",
+            "touch /etc/zfs/zfs-list.cache/test",
+
+            # Trigger the zedlet.
+            "zfs create -o mountpoint=/tmp/foo test/foo",
+        )
+
+        # Wait for the zedlet to update the cache with the new dataset.
+        machine.wait_until_succeeds(
+            "grep -F test/foo /etc/zfs/zfs-list.cache/test",
+            timeout=timedelta(seconds=120)
+        )
+
+        machine.succeed(
+            # Rerun systemd generators.
+            "systemctl daemon-reload",
+            "systemctl cat tmp-foo.mount | grep zfs-mount-generator",
+            "systemctl is-active tmp-foo.mount",
+        )
+      '';
+    };
+  };
 in
-{
-  series_2_3 = makeZfsTest {
-    zfsPackage = pkgs.zfs_2_3;
-    kernelPackages = pkgs.linuxPackages;
-  };
-
-  series_2_4 = makeZfsTest {
-    zfsPackage = pkgs.zfs_2_4;
-    kernelPackages = pkgs.linuxPackages;
-  };
-
-  unstable = makeZfsTest {
-    zfsPackage = pkgs.zfs_unstable;
-    kernelPackages = pkgs.linuxPackages;
-  };
-
+lib.recurseIntoAttrs (
+  lib.mapAttrs (
+    flavor: zfsPackage:
+    lib.recurseIntoAttrs (
+      lib.mapAttrs (
+        scenario: test:
+        runTest {
+          imports = [ test ];
+          name = "${flavor}-${scenario}";
+          nodes.machine = {
+            boot.kernelPackages = pkgs.linuxPackages;
+            boot.zfs.package = zfsPackage;
+          };
+        }
+      ) tests
+    )
+  ) packages
+)
+// {
   installerBoot =
     (import ./installer.nix {
       inherit system;
@@ -232,107 +333,4 @@ in
     (import ./installer.nix {
       inherit system;
     }).zfsroot;
-
-  expand-partitions = runTest {
-    name = "multi-disk-zfs";
-    nodes = {
-      machine =
-        { pkgs, ... }:
-        {
-          environment.systemPackages = [ pkgs.parted ];
-          boot.supportedFilesystems = [ "zfs" ];
-          networking.hostId = "00000000";
-
-          virtualisation = {
-            emptyDiskImages = [
-              20480
-              20480
-              20480
-              20480
-              20480
-              20480
-            ];
-          };
-
-          specialisation.resize.configuration = {
-            services.zfs.expandOnBoot = [ "tank" ];
-          };
-        };
-    };
-
-    testScript =
-      { nodes, ... }:
-      ''
-        start_all()
-        machine.wait_for_unit("default.target")
-        print(machine.succeed('mount'))
-
-        print(machine.succeed('parted --script /dev/vdb -- mklabel gpt'))
-        print(machine.succeed('parted --script /dev/vdb -- mkpart primary 1M 70M'))
-
-        print(machine.succeed('parted --script /dev/vdc -- mklabel gpt'))
-        print(machine.succeed('parted --script /dev/vdc -- mkpart primary 1M 70M'))
-
-        print(machine.succeed('zpool create tank mirror /dev/vdb1 /dev/vdc1 mirror /dev/vdd /dev/vde mirror /dev/vdf /dev/vdg'))
-        print(machine.succeed('zpool list -v'))
-        print(machine.succeed('mount'))
-        start_size = int(machine.succeed('df -k --output=size /tank | tail -n1').strip())
-
-        print(machine.succeed("/run/current-system/specialisation/resize/bin/switch-to-configuration test >&2"))
-        machine.wait_for_unit("zpool-expand-pools.service")
-        machine.wait_for_unit("zpool-expand@tank.service")
-
-        print(machine.succeed('zpool list -v'))
-        new_size = int(machine.succeed('df -k --output=size /tank | tail -n1').strip())
-
-        if (new_size - start_size) > 20000000:
-          print("Disk grew appropriately.")
-        else:
-          print(f"Disk went from {start_size} to {new_size}, which doesn't seem right.")
-          exit(1)
-      '';
-  };
-
-  zfs-mount-generator = runTest {
-    name = "zfs-mount-generator";
-    nodes.machine =
-      { ... }:
-      {
-        boot.supportedFilesystems = [ "zfs" ];
-        networking.hostId = "00000000";
-        virtualisation = {
-          emptyDiskImages = [ 4096 ];
-        };
-      };
-
-    testScript = ''
-      from datetime import timedelta
-
-      machine.wait_for_unit("multi-user.target")
-
-      machine.succeed(
-          "zpool create -O mountpoint=none test /dev/vdb",
-
-          # Enable list caching for the test pool.
-          "mkdir /etc/zfs/zfs-list.cache",
-          "touch /etc/zfs/zfs-list.cache/test",
-
-          # Trigger the zedlet.
-          "zfs create -o mountpoint=/tmp/foo test/foo",
-      )
-
-      # Wait for the zedlet to update the cache with the new dataset.
-      machine.wait_until_succeeds(
-          "grep -F test/foo /etc/zfs/zfs-list.cache/test",
-          timeout=timedelta(seconds=120)
-      )
-
-      machine.succeed(
-          # Rerun systemd generators.
-          "systemctl daemon-reload",
-          "systemctl cat tmp-foo.mount | grep zfs-mount-generator",
-          "systemctl is-active tmp-foo.mount",
-      )
-    '';
-  };
 }

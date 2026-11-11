@@ -23,7 +23,7 @@ callPackage ./generic.nix args {
   extraPatches = [ ];
 
   tests = {
-    inherit (nixosTests.zfs) unstable;
+    inherit (nixosTests.zfs.unstable) basic expand-partitions zfs-mount-generator;
   };
 
   hash = "sha256-ZgfHTPsNoeDq6GKP4Xiti7Keis3vIZLDaTGQjgCItIc=";

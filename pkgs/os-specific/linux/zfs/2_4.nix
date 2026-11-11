@@ -21,7 +21,7 @@ callPackage ./generic.nix args {
   extraPatches = [ ];
 
   tests = {
-    inherit (nixosTests.zfs) series_2_4;
+    inherit (nixosTests.zfs.series_2_4) basic expand-partitions zfs-mount-generator;
   }
   // lib.optionalAttrs stdenv.hostPlatform.isx86_64 {
     inherit (nixosTests.zfs) installer;
