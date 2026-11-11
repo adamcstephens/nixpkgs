@@ -1,5 +1,5 @@
 {
-  system,
+  handleTest,
   pkgs,
   runTest,
 }:
@@ -308,29 +308,22 @@ in
 lib.recurseIntoAttrs (
   lib.mapAttrs (
     flavor: zfsPackage:
-    lib.recurseIntoAttrs (
-      lib.mapAttrs (
-        scenario: test:
-        runTest {
-          imports = [ test ];
-          name = "${flavor}-${scenario}";
-          nodes.machine = {
-            boot.kernelPackages = pkgs.linuxPackages;
-            boot.zfs.package = zfsPackage;
-          };
-        }
-      ) tests
-    )
+    let
+      installerTests = handleTest ./installer.nix {
+        zfsAttribute = zfsPackage.kernelModuleAttribute;
+      };
+    in
+    lib.mapAttrs (
+      scenario: test:
+      runTest {
+        imports = [ test ];
+        name = "${flavor}-${scenario}";
+        nodes.machine.boot.zfs.package = zfsPackage;
+      }
+    ) tests
+    // {
+      installer = installerTests.zfsroot;
+      installerBoot = installerTests.separateBootZfs;
+    }
   ) packages
 )
-// {
-  installerBoot =
-    (import ./installer.nix {
-      inherit system;
-    }).separateBootZfs;
-
-  installer =
-    (import ./installer.nix {
-      inherit system;
-    }).zfsroot;
-}

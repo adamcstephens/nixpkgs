@@ -2079,7 +2079,7 @@ in
   zenohd = runTest ./zenohd.nix;
   zerobyte = runTest ./zerobyte.nix;
   zeronet-conservancy = runTest ./zeronet-conservancy.nix;
-  zfs = import ./zfs.nix { inherit system pkgs runTest; };
+  zfs = import ./zfs.nix { inherit handleTest pkgs runTest; };
   zigbee2mqtt = runTest ./zigbee2mqtt.nix;
   zipline = runTest ./zipline.nix;
   zoneminder = runTest ./zoneminder.nix;

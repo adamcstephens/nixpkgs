@@ -2,6 +2,7 @@
   system ? builtins.currentSystem,
   config ? { },
   pkgs ? import ../.. { inherit system config; },
+  zfsAttribute ? "zfs",
 }:
 
 with import ../lib/testing-python.nix { inherit system pkgs; };
@@ -1298,10 +1299,12 @@ in
   separateBootZfs = makeInstallerTest "separateBootZfs" {
     extraInstallerConfig = {
       boot.supportedFilesystems = [ "zfs" ];
+      boot.zfs.package = pkgs.${zfsAttribute};
       networking.hostId = "00000000";
     };
 
     extraConfig = ''
+      boot.zfs.package = pkgs.${zfsAttribute};
       # Using by-uuid overrides the default of by-id, and is unique
       # to the qemu disks, as they don't produce by-id paths for
       # some reason.
@@ -1371,11 +1374,13 @@ in
   zfsroot = makeInstallerTest "zfs-root" {
     extraInstallerConfig = {
       boot.supportedFilesystems = [ "zfs" ];
+      boot.zfs.package = pkgs.${zfsAttribute};
       networking.hostId = "00000000";
     };
 
     extraConfig = ''
       boot.supportedFilesystems = [ "zfs" ];
+      boot.zfs.package = pkgs.${zfsAttribute};
 
       # Using by-uuid overrides the default of by-id, and is unique
       # to the qemu disks, as they don't produce by-id paths for

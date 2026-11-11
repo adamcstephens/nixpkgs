@@ -1,6 +1,8 @@
 {
   callPackage,
+  lib,
   nixosTests,
+  stdenv,
   ...
 }@args:
 
@@ -24,6 +26,9 @@ callPackage ./generic.nix args {
 
   tests = {
     inherit (nixosTests.zfs.unstable) basic expand-partitions zfs-mount-generator;
+  }
+  // lib.optionalAttrs stdenv.hostPlatform.isx86_64 {
+    inherit (nixosTests.zfs.unstable) installer installerBoot;
   };
 
   hash = "sha256-ZgfHTPsNoeDq6GKP4Xiti7Keis3vIZLDaTGQjgCItIc=";
