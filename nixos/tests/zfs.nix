@@ -15,7 +15,10 @@ let
 
   tests = {
     basic = {
-      meta.maintainers = with lib.maintainers; [ elvishjerricco ];
+      meta.maintainers = with lib.maintainers; [
+        adamcstephens
+        elvishjerricco
+      ];
 
       nodes.machine =
         {
