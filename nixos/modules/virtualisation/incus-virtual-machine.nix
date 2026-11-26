@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  options,
   pkgs,
   ...
 }:
@@ -22,12 +23,18 @@ in
     ../profiles/qemu-guest.nix
   ];
 
-  options.system.build.qemuImage = lib.mkOption {
-    default = null;
-    description = "dummy option for backwards compatibilty. Use `system.build.repartImage` instead.";
-  }; # Added 2026-11-26
+  options.system.build = lib.mkOption {
+    type = lib.types.submoduleWith {
+      modules = [
+        { options.assertions = options.assertions; }
+        (lib.mkRemovedOptionModule [ "qemuImage" ] "Use `system.build.repartImage` instead.")
+      ];
+    };
+  };
 
   config = {
+    assertions = config.system.build.assertions;
+
     system.build.repartImage = config.image.repart.image.overrideAttrs (previousAttrs: {
       nativeBuildInputs = previousAttrs.nativeBuildInputs ++ [ pkgs.qemu-utils ];
 
